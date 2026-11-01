@@ -2,7 +2,7 @@ const SAVE_KEY = 'echo_save_three_acts_v3';
 const SAVE_VERSION = 3;
 
 function defaultSave() {
-    return {version: SAVE_VERSION, level: 0, memory: null, endings: [], introSeen: false};
+    return {version: SAVE_VERSION, level: 0, memory: null, endings: [], introSeen: false, player: null, branchCheckpoint: null, completedEnding: null};
 }
 
 export const SaveSystem = {
@@ -41,7 +41,7 @@ export const SaveSystem = {
             const raw = localStorage.getItem(SAVE_KEY);
             if (!raw) return false;
             const data = JSON.parse(raw);
-            return !!data && data.version === SAVE_VERSION;
+            return !!data && data.version === SAVE_VERSION && !!data.memory;
         } catch (e) {
             return false;
         }

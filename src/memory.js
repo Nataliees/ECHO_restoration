@@ -10,6 +10,7 @@ export class Memory {
         this.fragments = new Set();
         this.notesRead = new Set();
         this.events = new Set();
+        this.moralChoice = null;
     }
 
     addFragment(id) {
@@ -20,6 +21,7 @@ export class Memory {
     }
 
     hasFragment(id) {
+        if (id === 'moral_choice') return !!this.moralChoice;
         if (id === 'radio_echo') return this.events.has('radio_echo');
         const normalized = LEGACY_FRAGMENT_MAP[id] || id;
         return this.fragments.has(normalized);
@@ -59,17 +61,22 @@ export class Memory {
         return storyRequirements.recoveredFragments.every(id => this.fragments.has(id));
     }
 
+    chooseResponsibility(choice) {
+        if (!['accept','justify'].includes(choice) || !this.canRestoreEvacuationEvidence()) return false;
+        this.moralChoice = choice;
+        return true;
+    }
+
     getAvailableEndings() {
-        const endings = ['rewrite'];
-        if (this.allFragmentsRecovered()) {
-            endings.unshift('accept');
-            endings.push('restart');
-        }
-        return endings;
+        if (!this.allFragmentsRecovered()) return [];
+        if (this.moralChoice === 'accept') return ['accept','restart'];
+        if (this.moralChoice === 'justify') return ['rewrite','restart'];
+        return [];
     }
 
     serialize() {
         return {
+            moralChoice: this.moralChoice,
             fragments: Array.from(this.fragments),
             notesRead: Array.from(this.notesRead),
             events: Array.from(this.events)
@@ -82,6 +89,7 @@ export class Memory {
         this.fragments.clear();
         this.notesRead.clear();
         this.events.clear();
+        this.moralChoice = ['accept','justify'].includes(data?.moralChoice) ? data.moralChoice : null;
         if (!data) return;
         (data.fragments || []).forEach(f => {
             const id = LEGACY_FRAGMENT_MAP[f] || f;

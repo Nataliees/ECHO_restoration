@@ -9,7 +9,7 @@ import { Memory } from './memory.js';
 import { Interactions } from './interactions.js';
 import { SaveSystem } from './save.js';
 import { levels } from './levels.js';
-import { whispers } from './story.js';
+import { whispers, endings } from './story.js';
 import { IntroSequence } from './intro.js';
 import { RecoveredTransmission } from './recording.js';
 
@@ -27,11 +27,15 @@ export class Game {
         this._whisperStarted = false;
         this.recording = null;
         this.introSeen = true;
+        this.hasActiveRun = false;
+        this.branchCheckpoint = null;
+        this.completedEnding = null;
     }
 
     init() {
         const save = SaveSystem.load();
         this.levelIndex = save.level || 0;
+        this.branchCheckpoint = save.branchCheckpoint || null;
         (save.endings || []).forEach(e => this.unlockedEndings.add(e));
 
         this.memory = new Memory();
@@ -50,6 +54,10 @@ export class Game {
         this._updateMenuState();
 
         window.addEventListener('resize', () => this._onResize());
+        this._autosave = setInterval(() => { if (this.hasActiveRun) this.saveState(); }, 1500);
+        window.addEventListener('pagehide', () => { if (this.hasActiveRun) this.saveState(); });
+        document.addEventListener('visibilitychange', () => { if (document.hidden && this.hasActiveRun) this.saveState(); });
+        document.body.classList.add('menu-view');
         this.clock = new THREE.Clock();
         this._animate();
     }
@@ -95,6 +103,11 @@ export class Game {
         const restartBtn = document.getElementById('btn-restart');
         const backMenuBtn = document.getElementById('btn-back-menu');
 
+        document.getElementById('btn-return-branch')?.addEventListener('click', () => this.returnToBranch());
+        document.getElementById('btn-about')?.addEventListener('click', () => this._showScreen('about-screen'));
+        document.getElementById('btn-about-back')?.addEventListener('click', () => this._showScreen('menu-screen'));
+        document.getElementById('btn-exit-back')?.addEventListener('click', () => {this.state='menu';this._showScreen('menu-screen');});
+        document.getElementById('btn-exit')?.addEventListener('click', () => this.exitGame());
         if (startBtn) startBtn.addEventListener('click', () => this.startNewGame());
         if (continueBtn) continueBtn.addEventListener('click', () => this.continueGame());
         if (resumeBtn) resumeBtn.addEventListener('click', () => this.resume());
@@ -116,11 +129,15 @@ export class Game {
                 ? SaveSystem.hasSave()
                 : !!localStorage.getItem('echo_save');
             continueBtn.disabled = !hasSave;
+            continueBtn.hidden = !hasSave;
         }
+        const branch = document.getElementById('btn-return-branch');
+        if (branch) branch.hidden = !this.branchCheckpoint;
         if (this.ui) this.ui.updateEndingsCounter();
     }
 
     _showScreen(id) {
+        document.body.classList.toggle('menu-view', ['menu-screen','about-screen','exit-screen'].includes(id));
         document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
         if (id) {
             const el = document.getElementById(id);
@@ -132,20 +149,27 @@ export class Game {
         this.intro?.stop();
         this.finishRecoveredRecording();
         this._stopWhispers();
+        this.audioCtx?.resume().catch(()=>{});
+        this.hasActiveRun = true;
+        this.branchCheckpoint = null;
+        this.completedEnding = null;
         this.memory = new Memory();
         this.levelIndex = 0;
         this.introSeen = false;
         this._showScreen(null);
         this.ui.resetForMenu();
-        this.state = 'intro';
+        this.state = 'play';
+        this.introSeen = true;
         this._loadLevel(0);
         if (document.pointerLockElement) document.exitPointerLock();
-        this.intro.start();
+        this._requestPointerLock();
+        this._startWhispers();
     }
 
     _onIntroFinished() {
         if (this.state !== 'intro') return;
         this.introSeen = true;
+        this.hasActiveRun = true;
         this.state = 'play';
         this.saveState();
         this.ui.showSubtitle('Проект ECHO. Восстановление памяти запущено.', 4200);
@@ -155,28 +179,50 @@ export class Game {
     }
 
     continueGame() {
+        if (!SaveSystem.hasSave()) return;
+        this.audioCtx?.resume().catch(()=>{});
         const save = SaveSystem.load();
+        this.hasActiveRun = true;
+        this.branchCheckpoint = save.branchCheckpoint || null;
+        this.completedEnding = save.completedEnding || null;
         this.levelIndex = save.level || 0;
         this.memory = new Memory();
         if (save.memory) this.memory.load(save.memory);
+        // Older saves reached Act III without a first choice. Resume at the new branch.
+        if (this.levelIndex === 2 && !this.memory.moralChoice) {
+            this.levelIndex = 1;
+            this.memory.fragments.delete('toy_memory');
+            this.completedEnding = null;
+            save.player = null;
+        }
         (save.endings || []).forEach(e => this.unlockedEndings.add(e));
 
         this.intro?.stop();
         this._showScreen(null);
         this.introSeen = !!save.introSeen;
         this.state = (this.levelIndex === 0 && !this.introSeen) ? 'intro' : 'play';
+        this.ui.resetForMenu();
         this._loadLevel(this.levelIndex);
+        this._restorePlayer(save.player);
+        this.saveState();
+        if (this.completedEnding && endings[this.completedEnding]) {
+            this.state = 'ending';
+            this.ui.showEnding(endings[this.completedEnding], {onBackToMenu: () => this.backToMenu()});
+            return;
+        }
         if (this.state === 'intro') {
             if (document.pointerLockElement) document.exitPointerLock();
             this.intro.start();
         } else {
             this._requestPointerLock();
             this._startWhispers();
+            if(this.levelIndex===1 && !this.memory.moralChoice && this.memory.canRestoreEvacuationEvidence())this.openMoralChoice();
         }
     }
 
     pause() {
         if (this.state !== 'play') return;
+        this.saveState();
         this.state = 'paused';
         document.exitPointerLock();
         this._showScreen('pause-screen');
@@ -190,6 +236,8 @@ export class Game {
     }
 
     backToMenu() {
+        if (this.hasActiveRun) this.saveState();
+        this.hasActiveRun = false;
         this.intro?.stop();
         this.finishRecoveredRecording();
         this.state = 'menu';
@@ -205,18 +253,62 @@ export class Game {
         if (!this.renderer || !this.renderer.domElement) return;
         if (this.player && this.player.isMobile) return;
         try {
-            this.renderer.domElement.requestPointerLock();
+            this.renderer.domElement.requestPointerLock()?.catch(()=>{});
         } catch (e) { /* ignore */ }
     }
 
     /* ================= Сохранение ================= */
-    saveState() {
-        SaveSystem.save({
+    snapshot() {
+        return {
             level: this.levelIndex,
             memory: this.memory.serialize(),
-            endings: Array.from(this.unlockedEndings),
-            introSeen: this.introSeen
+            introSeen: this.introSeen,
+            player: this.player ? {x:this.player.position.x,z:this.player.position.z,yaw:this.player.yaw,pitch:this.player.pitch} : null
+        };
+    }
+
+    saveState() {
+        SaveSystem.save({...this.snapshot(), endings:Array.from(this.unlockedEndings), branchCheckpoint:this.branchCheckpoint, completedEnding:this.completedEnding});
+    }
+
+    _restorePlayer(p) {
+        if (!p || !['x','z','yaw','pitch'].every(k=>Number.isFinite(p[k]))) return;
+        const half=this.levelIndex===1?5.35:4.35;
+        if(Math.abs(p.x)>half || Math.abs(p.z)>half)return;
+        const pos=this.resolveCollision(p.x,p.z,p.x,p.z);
+        this.player.setPosition(pos.x,1.7,pos.z);this.player.yaw=p.yaw;this.player.pitch=Math.max(-1.5,Math.min(1.5,p.pitch));this.player._applyCamera();
+    }
+
+    openMoralChoice() {
+        if (!this.memory.canRestoreEvacuationEvidence()) return;
+        if (!this.branchCheckpoint) {
+            this.branchCheckpoint=this.snapshot();
+            this.branchCheckpoint.memory.moralChoice=null;
+        }
+        this.saveState();this.state='choice';
+        if(document.pointerLockElement)document.exitPointerLock();
+        this.ui.showMoralChoice(choice=>{
+            if (!this.memory.chooseResponsibility(choice)) return;
+            this.completedEnding=null;this.state='play';this.ui.hideMoralChoice();this.loadLevel(2);this._requestPointerLock();
         });
+    }
+
+    returnToBranch() {
+        const cp=this.branchCheckpoint;
+        if(!cp)return;
+        this.intro?.stop();this.finishRecoveredRecording();this.ui.resetForMenu();
+        this.memory=new Memory();this.memory.load(cp.memory);this.memory.moralChoice=null;
+        this.completedEnding=null;this.introSeen=true;this.hasActiveRun=true;
+        this._showScreen(null);this.state='play';this._loadLevel(1);this._restorePlayer(cp.player);this.saveState();this.openMoralChoice();
+    }
+
+    exitGame() {
+        if(this.hasActiveRun)this.backToMenu();
+        this.recording?.stop();this.intro?.stop();this._stopWhispers();this.audioCtx?.suspend();
+        this.state='exited';
+        this._showScreen('exit-screen');
+        // Browsers only permit closing windows that were opened by script.
+        if(window.opener)window.close();
     }
 
     /* ================= Звук (alias) ================= */
@@ -556,7 +648,7 @@ export class Game {
     finishRecoveredRecording() {
         this.recording?.stop();
         this.ui?.hideTransmission();
-        if (this.state === 'memory') this.state = 'play';
+        if (this.state === 'memory') {this.state = 'play';this._requestPointerLock();}
     }
 
     /* ================= Коллизии ================= */
@@ -638,6 +730,7 @@ export class Game {
     _animate() {
         requestAnimationFrame(() => this._animate());
         const dt = Math.min(this.clock.getDelta(), 0.05);
+        if(this.state==='exited')return;
 
         if (this.state === 'play') {
             if (this.player) this.player.update(dt);

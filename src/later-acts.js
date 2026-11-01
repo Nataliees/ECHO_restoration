@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import { surface } from './atmosphere.js';
 import { makeModel } from './models.js';
-import { installMirror } from './mirror.js';
 
 export function dressLaterAct(game, level) {
     const lab=level.id==='lab', half=lab?5.7:4.7;
@@ -113,7 +112,8 @@ export function dressLaterAct(game, level) {
         spot([0,2.8,-4.05],[0,1.4,0],0xffe0b6,19);
         const mirror=game.interactables.find(o=>o.userData.type==='mirror');
         const placeholder=mirror.children[0];mirror.remove(placeholder);placeholder.geometry.dispose();placeholder.material.dispose();
-        installMirror(game,mirror);
+        const matte=new THREE.Mesh(new THREE.PlaneGeometry(2.16,3.12),new THREE.MeshStandardMaterial({color:0x6b7270,roughness:1,metalness:0,transparent:false,opacity:1,side:THREE.DoubleSide}));
+        matte.name='matte-mirror';matte.receiveShadow=true;mirror.add(matte);
     }
     // Printable labels for the already-existing documents; no additional plot text.
     const sheet=document.createElement('canvas');sheet.width=256;sheet.height=320;const ink=sheet.getContext('2d');

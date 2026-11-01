@@ -1,67 +1,51 @@
 const {chromium}=require('playwright');
 const assert=require('node:assert/strict');
-const fs=require('node:fs');
-const path=require('node:path');
-const output=process.env.ECHO_SCREENSHOTS || path.join(require('node:os').tmpdir(),'echo-browser-check');
-fs.mkdirSync(output,{recursive:true});
+const fs=require('node:fs'),path=require('node:path');
+const output=process.env.ECHO_SCREENSHOTS||path.join(require('node:os').tmpdir(),'echo-browser-check');fs.mkdirSync(output,{recursive:true});
 (async()=>{
- const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH || undefined,headless:true,args:['--no-sandbox','--enable-unsafe-swiftshader']});
- const page=await browser.newPage({viewport:{width:1280,height:800}});
- const errors=[];page.on('pageerror',e=>errors.push(e.message));
- page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
- await page.goto(process.env.ECHO_TEST_URL || 'http://127.0.0.1:8765');
- await page.waitForFunction(()=>window.__game?.state==='menu',{timeout:60000});
- await page.click('#btn-start');await page.click('#intro-skip');await page.waitForFunction(()=>window.__game.state==='play');
- await page.evaluate(()=>window.__game.loadLevel(1));await page.waitForTimeout(800);
- await page.screenshot({path:path.join(output,'echo-lab.png')});
- const lab=await page.evaluate(()=>{
-  const g=window.__game;
-  const inspect=(id,x,z)=>{const obj=g.interactables.find(o=>o.userData.id===id);g.player.setPosition(x,1.7,z);g.camera.lookAt(obj.position);g.camera.updateMatrixWorld(true);g.interactions.updateHover();return g.interactions.hoveredObject?.userData.id;};
-  return [inspect('evacuation_order',-4.3,-2.7),inspect('registry_damaged',4.2,-2.7),inspect('reactor_override',0,2.7)];
- });
- assert.deepEqual(lab,['evacuation_order','registry_damaged','reactor_override']);
- await page.evaluate(()=>window.__game.loadLevel(2));await page.waitForTimeout(1000);
- await page.screenshot({path:path.join(output,'echo-capsule.png')});
- await page.evaluate(()=>{const g=window.__game;g.player.setPosition(0,1.7,-2.35);g.player.pitch=-.04;g.player._applyCamera();});await page.waitForTimeout(500);
- await page.screenshot({path:path.join(output,'echo-mirror.png')});
- const mirror=await page.evaluate(()=>{
-  const g=window.__game,m=g.mirror;
-  const r=m.reflector.getRenderTarget();
-  const pixels=new Uint16Array(r.width*r.height*4);
-  m.update(.016);g.renderer.render(g.scene,g.camera);g.renderer.readRenderTargetPixels(r,0,0,r.width,r.height,pixels);
-  m.reflector.userData.showCharacter=false;g.renderer.render(g.scene,g.camera);
-  const noBody=new Uint16Array(pixels.length);g.renderer.readRenderTargetPixels(r,0,0,r.width,r.height,noBody);
-  let changed=0;for(let i=0;i<pixels.length;i+=4)if(pixels[i]!==noBody[i]||pixels[i+1]!==noBody[i+1]||pixels[i+2]!==noBody[i+2])changed++;
-  m.reflector.userData.showCharacter=true;
-  return {changed,avatarHidden:!m.avatar.visible,playerZ:g.player.position.z,reflectedZ:m.reflector.camera.position.z,mirrorZ:m.reflector.getWorldPosition(m.avatar.position.clone()).z};
- });
- console.log('mirror',mirror);assert.ok(mirror.changed>500,'engineer actually contributes pixels to mirror');
- assert.ok(mirror.avatarHidden);assert.ok(Math.abs(mirror.reflectedZ-(2*mirror.mirrorZ-mirror.playerZ))<.001);
- const pose=await page.evaluate(()=>{
-  const g=window.__game;g.player.position.x=.2;g.player.yaw=.15;g.player.pitch=.1;g.mirror.update(.1);
-  const result={x:g.mirror.avatar.position.x,yaw:g.mirror.avatar.rotation.y,pitch:g.mirror.head.rotation.x,swing:g.mirror.avatar.getObjectByName('engineer-leg-1').rotation.x};
-  g.player.setPosition(0,1.7,-2.35);g.mirror.update(.1);return result;
- });
- assert.equal(pose.x,.2);assert.ok(Math.abs(pose.yaw-Math.PI-.15)<.001);assert.equal(pose.pitch,-.1);assert.ok(Math.abs(pose.swing)>.01);
- const gates=await page.evaluate(()=>{
-  const g=window.__game;
-  function focus(id,x,z){const obj=g.interactables.find(o=>o.userData.id===id);g.player.setPosition(x,1.7,z);g.camera.lookAt(obj.position);g.camera.updateMatrixWorld(true);g.interactions.updateHover();return g.interactions.hoveredObject?.userData.id;}
-  const toy=focus('memory_toy',2.2,-.3);g.interactions.interact();g.ui.hideNote();
-  const mirror=focus('final_mirror',0,-2.3);
-  for(const id of ['child_drawing','evacuation_records'])g.memory.addFragment(id);
-  g.interactions.interact();
-  return {toy,mirror,state:g.state,choices:[...document.querySelectorAll('.ending-option')].map(b=>({text:b.textContent,disabled:b.disabled}))};
- });
- console.log('gates',gates);assert.equal(gates.toy,'memory_toy');assert.equal(gates.mirror,'final_mirror');assert.equal(gates.state,'ending');assert.equal(gates.choices.length,3);assert.ok(gates.choices.every(x=>!x.disabled));
- // Force render after each load to allocate resources, then compare stable third-act totals.
- const resources=await page.evaluate(()=>{
-  const g=window.__game;g.state='play';
-  function render(){g.mirror?.update(.016);g.renderer.render(g.scene,g.camera);return {...g.renderer.info.memory};}
-  g.loadLevel(2);const before=render();
-  for(let i=0;i<3;i++){g.loadLevel(0);render();g.loadLevel(1);render();g.loadLevel(2);render();}
-  return {before,after:render()};
- });
- console.log(JSON.stringify({errors,lab,resources}));
- assert.equal(errors.length,0);assert.deepEqual(resources.after,resources.before);
+ const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||undefined,headless:true,args:['--no-sandbox','--enable-unsafe-swiftshader']});
+ const page=await browser.newPage({viewport:{width:1280,height:800}}),errors=[];
+ page.on('pageerror',e=>errors.push(e.message));
+ await page.goto(process.env.ECHO_TEST_URL||'http://127.0.0.1:8765');await page.waitForFunction(()=>window.__game?.state==='menu');
+ assert.equal(await page.locator('#btn-continue').isVisible(),false);
+ assert.equal(await page.locator('#btn-return-branch').isVisible(),false);
+ await page.waitForTimeout(650);await page.screenshot({path:path.join(output,'menu-new.png')});
+ await page.click('#btn-about');await page.waitForSelector('#about-screen.active');await page.click('#btn-about-back');
+ await page.click('#btn-start');await page.waitForFunction(()=>window.__game.state==='play');
+ async function focus(id,x,z){
+  await page.evaluate(({id,x,z})=>{const g=window.__game,o=g.interactables.find(o=>o.userData.id===id||o.userData.type===id);if(!o)throw Error('missing '+id);g.player.setPosition(x,1.7,z);const dx=o.position.x-x,dz=o.position.z-z;g.player.yaw=Math.atan2(-dx,-dz);g.player.pitch=Math.atan2(o.position.y-1.7,Math.hypot(dx,dz));g.player._applyCamera();g.camera.updateMatrixWorld(true);g.interactions.updateHover();if(g.interactions.hoveredObject!==o)throw Error('unreachable '+id);},{id,x,z});
+ }
+ async function read(id,x,z){await focus(id,x,z);await page.keyboard.press('KeyE');await page.waitForSelector('#note-overlay.active');await page.keyboard.press('KeyE');}
+ await read('drawing_child',-2.8,-2.6);await focus('emergency_receiver',2.6,-2.8);await page.keyboard.press('KeyE');await page.waitForSelector('#recording-overlay.active');await page.keyboard.press('KeyE');
+ await focus('exit',0,3.1);await page.keyboard.press('KeyE');await page.waitForFunction(()=>window.__game.levelIndex===1);
+ await focus('reactor_override',0,2.7);await page.keyboard.press('KeyE');assert.equal(await page.locator('#note-overlay').evaluate(n=>n.classList.contains('active')),false);
+ await read('evacuation_order',-4.3,-2.7);await read('registry_damaged',4.2,-2.7);await read('reactor_override',0,2.7);
+ await page.waitForSelector('#moral-overlay.active');await page.screenshot({path:path.join(output,'first-choice.png')});
+ await page.click('#moral-accept');await page.waitForFunction(()=>window.__game.levelIndex===2&&window.__game.state==='play');
+ const mirror=await page.evaluate(()=>{const g=window.__game,m=g.scene.getObjectByName('matte-mirror');let reflective=false;g.scene.traverse(o=>{if(o.isReflector)reflective=true;});return {matte:!!m,transparent:m.material.transparent,opacity:m.material.opacity,roughness:m.material.roughness,hero:!!g.scene.getObjectByName('engineer-reflection'),reflective};});
+ assert.deepEqual(mirror,{matte:true,transparent:false,opacity:1,roughness:1,hero:false,reflective:false});
+ // Save a location and view, then reload the whole page in the same browser profile.
+ await page.evaluate(()=>{const g=window.__game;g.player.setPosition(.7,1.7,2.5);g.player.yaw=.4;g.player.pitch=-.1;g.saveState();});
+ await page.keyboard.press('Escape');await page.waitForSelector('#pause-screen.active');await page.click('#btn-back-menu');
+ await page.reload();await page.waitForFunction(()=>window.__game?.state==='menu');await page.click('#btn-continue');
+ const restored=await page.evaluate(()=>{const p=window.__game.player;return {x:p.position.x,z:p.position.z,yaw:p.yaw,pitch:p.pitch};});assert.deepEqual(restored,{x:.7,z:2.5,yaw:.4,pitch:-.1});
+ await page.waitForTimeout(650);await page.screenshot({path:path.join(output,'matte-mirror-scene.png')});
+ async function finish(expected,ending){
+  await read('memory_toy',2.2,-.3);await focus('final_mirror',0,-2.3);await page.keyboard.press('KeyE');await page.waitForFunction(()=>window.__game.state==='ending');
+  assert.deepEqual(await page.locator('.ending-option').evaluateAll(ns=>ns.map(n=>n.dataset.ending)),expected);
+  await page.click(`[data-ending="${ending}"]`);await page.click('#ending-back');await page.waitForSelector('#menu-screen.active');
+ }
+ await finish(['accept','restart'],'accept');
+ assert.match(await page.locator('#menu-endings').innerText(),/Принять правду/);
+ await page.reload();await page.waitForFunction(()=>window.__game?.state==='menu');await page.click('#btn-return-branch');await page.waitForSelector('#moral-overlay.active');
+ assert.equal(await page.evaluate(()=>window.__game.memory.hasFragment('toy_memory')),false,'checkpoint does not retain later toy');
+ await page.click('#moral-justify');await page.waitForFunction(()=>window.__game.levelIndex===2&&window.__game.state==='play');await finish(['rewrite','restart'],'rewrite');
+ await page.click('#btn-return-branch');await page.click('#moral-accept');await finish(['accept','restart'],'restart');
+ assert.equal(await page.locator('#menu-endings li').count(),3);
+ await page.waitForTimeout(650);await page.screenshot({path:path.join(output,'menu-completed.png')});
+ const resources=await page.evaluate(()=>{const g=window.__game;g.hasActiveRun=true;g.state='play';const render=()=>{g.renderer.render(g.scene,g.camera);return {...g.renderer.info.memory};};g.loadLevel(2);const before=render();for(let i=0;i<3;i++){g.loadLevel(0);render();g.loadLevel(1);render();g.loadLevel(2);render();}g.backToMenu();return {before,after:(g.loadLevel(2),render())};});
+ assert.deepEqual(resources.after,resources.before);
+ await page.evaluate(()=>window.__game.backToMenu());await page.click('#btn-exit');await page.waitForSelector('#exit-screen.active');assert.equal(await page.evaluate(()=>window.__game.state),'exited');
+ assert.deepEqual(errors,[]);console.log(JSON.stringify({errors,mirror,restored,resources,branches:2,endings:3}));
  await browser.close();
 })();

@@ -82,8 +82,11 @@ export class Interactions {
     _readNote(id) {
         const note = notes[id];
         if (!note) return;
+        if (id==='reactor_override' && !['evacuation_order','registry_damaged'].every(n=>this.game.memory.hasNote(n))) {
+            this.game.ui.showSubtitle('Сначала изучите приказ эвакуации и повреждённый реестр.',4200);return;
+        }
         this.game.memory.markNoteRead(id);
-        this.game.ui.showNote(note);
+        this.game.ui.showNote(note, id==='reactor_override' ? ()=>this.game.openMoralChoice() : null);
         this.game.playBlip();
         if (this.game.memory.canRestoreEvacuationEvidence()) {
             const added = this.game.memory.addFragment('evacuation_records');
@@ -129,11 +132,13 @@ export class Interactions {
             const explanations = {
                 child_drawing: 'детский рисунок',
                 radio_echo: 'запись на приёмнике',
-                evacuation_records: 'три документа об эвакуации'
+                evacuation_records: 'три документа об эвакуации',
+                moral_choice: 'решение по журналу реактора'
             };
             this.game.ui.showSubtitle('Доступ закрыт. Не найдено: ' + missing.map(id => explanations[id] || id).join(', '), 4600);
             return;
         }
+        if(this.game.levelIndex===1 && !this.game.memory.moralChoice){this.game.openMoralChoice();return;}
         const next = group.userData.nextLevel;
         if (!Number.isInteger(next)) return;
         this.game.playBlip();
@@ -146,6 +151,7 @@ export class Interactions {
             return;
         }
         const available = this.game.memory.getAvailableEndings();
+        if(!available.length){this.game.ui.showSubtitle('Сначала примите решение в лаборатории.',4000);return;}
         this.game.state = 'ending';
         if (document.pointerLockElement) document.exitPointerLock();
         this.game.ui.showEndingChoice(available, endingId => {
@@ -158,6 +164,8 @@ export class Interactions {
                 this.game.state = 'play';
                 return;
             }
+            if(!available.includes(endingId))return;
+            this.game.completedEnding=endingId;
             this.game.unlockedEndings.add(endingId);
             this.game.saveState();
             this.game.playBlip();

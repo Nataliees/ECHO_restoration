@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { Reflector } from '../assets/vendor/Reflector.js';
 
 export function installMirror(game, interaction) {
-    const {root:avatar,head,limbs}=createEngineer();
+    const {root:avatar,head,limbs,animate}=createEngineer();
     avatar.visible=false;game.scene.add(avatar);game.levelObjects.push(avatar);
     const reflector = new Reflector(new THREE.PlaneGeometry(2.16,3.12),{
         color:0xc7cfcc,textureWidth:game.player?.isMobile ? 384 : 768,
@@ -34,6 +34,7 @@ export function installMirror(game, interaction) {
             leg.rotation.x=THREE.MathUtils.damp(leg.rotation.x,target,14,dt);
             arm.rotation.x=-leg.rotation.x*.65;
         }
+        animate(dt,moving,phase);
         previous.copy(player.position);initialized=true;
         avatar.updateMatrixWorld(true);
     };

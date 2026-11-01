@@ -43,6 +43,8 @@ export class UI {
         this._endingHandler = null;
         this._journalOpen = false;
         this._endingBack = null;
+        this._afterNote = null;
+        this._moralHandler = null;
         this._bind();
     }
 
@@ -102,7 +104,7 @@ export class UI {
             if (radio) return 'Найдите детский рисунок.';
         }
         if (level.id === 'lab') {
-            if (memory.hasFragment('evacuation_records')) return 'Протокол восстановлен. Найдите выход из лаборатории.';
+            if (memory.hasFragment('evacuation_records')) return 'Прочитайте журнал реактора и примите первое решение.';
             const read = storyRequirements.evidenceNotes.filter(id => memory.hasNote(id)).length;
             return `Изучите документы: ${read}/3. Не делайте выводов о судьбе семьи.`;
         }
@@ -179,10 +181,18 @@ export class UI {
     updateEndingsCounter() {
         const count = this.game.unlockedEndings.size;
         if (this.counterEl) this.counterEl.textContent = `ФИНАЛЫ ${count}/3`;
-        if (this.menuEndingsEl) this.menuEndingsEl.textContent = `ОТКРЫТЫЕ ФИНАЛЫ: ${count} / 3`;
+        if (this.menuEndingsEl) {
+            this.menuEndingsEl.replaceChildren();
+            const title=document.createElement('div');title.textContent=`Открытые финалы · ${count} / 3`;this.menuEndingsEl.appendChild(title);
+            const list=document.createElement('ul');list.className='menu-ending-list';
+            for(const id of this.game.unlockedEndings){if(!endings[id])continue;const li=document.createElement('li');li.textContent=endings[id].title;list.appendChild(li);}
+            this.menuEndingsEl.appendChild(list);
+        }
     }
 
     resetForMenu() {
+        this._afterNote = null;
+        this.hideMoralChoice();
         this.hidePrompt();
         this.subtitleEl?.classList.remove('visible');
         this.noteOverlay?.classList.remove('active');
@@ -198,7 +208,8 @@ export class UI {
         this._endingBack = null;
     }
 
-    showNote(note) {
+    showNote(note, onClose = null) {
+        this._afterNote = onClose;
         if (!this.noteOverlay) return;
         const info = typeof note === 'string' ? {title: 'ЗАПИСЬ', author: 'АРХИВ', body: note} : note;
         this.noteTitle && (this.noteTitle.textContent = info.title || 'ЗАПИСЬ');
@@ -219,6 +230,8 @@ export class UI {
         if (this._noteHandler) window.removeEventListener('keydown', this._noteHandler);
         this._noteHandler = null;
         if (this.game.state === 'dialog') this.game.state = 'play';
+        const after=this._afterNote;this._afterNote=null;
+        if(after)after();else this.game._requestPointerLock();
         if (this._notification) {
             const text = this._notification;
             this._notification = null;
@@ -238,6 +251,23 @@ export class UI {
 
     hideTransmission() { this.recordingOverlay?.classList.remove('active'); }
 
+    showMoralChoice(onChoose) {
+        this.hideMoralChoice();
+        const overlay=document.getElementById('moral-overlay');overlay.classList.add('active');
+        document.getElementById('moral-accept').onclick=()=>onChoose('accept');
+        document.getElementById('moral-justify').onclick=()=>onChoose('justify');
+        const close=()=>{this.hideMoralChoice();this.game.state='play';this.game._requestPointerLock();};
+        document.getElementById('moral-close').onclick=close;
+        this._moralHandler=e=>{if(!e.repeat&&(e.code==='KeyE'||e.code==='Escape'))close();};
+        window.addEventListener('keydown',this._moralHandler);
+    }
+
+    hideMoralChoice() {
+        document.getElementById('moral-overlay')?.classList.remove('active');
+        if(this._moralHandler)window.removeEventListener('keydown',this._moralHandler);
+        this._moralHandler=null;
+    }
+
     showEndingChoice(available, onChoose) {
         if (!this.endingOverlay || !this.endingChoiceEl) return;
         this.endingOverlay.classList.add('active');
@@ -249,7 +279,7 @@ export class UI {
         this.endingStatus && (this.endingStatus.textContent = 'Выбор нельзя будет отменить.');
         if (this.endingBack) this.endingBack.hidden = true;
 
-        for (const id of ['accept', 'rewrite', 'restart']) {
+        for (const id of available) {
             const entry = endings[id];
             const enabled = available.includes(id);
             const button = document.createElement('button');
@@ -261,7 +291,7 @@ export class UI {
             detail.textContent = id === 'accept'
                 ? 'Сохранить все воспоминания и принять ответственность за своё решение.'
                 : id === 'rewrite'
-                    ? 'Стереть воспоминание о собственном решении и отказаться от ответственности.'
+                    ? 'Полностью стереть воспоминания о произошедшем.'
                     : 'Создать новую личность и добровольно оставить прежнюю семью и жизнь позади.';
             button.dataset.ending = id;
             button.setAttribute('aria-label', `${entry.label}. ${detail.textContent}`);
@@ -281,10 +311,11 @@ export class UI {
         }
         if (this._endingHandler) window.removeEventListener('keydown', this._endingHandler);
         this._endingHandler = e => {
-            if (e.code === 'Escape') {
+            if (e.code === 'Escape' || e.code === 'KeyE') {
                 this._closeEndingChoice();
                 this.endingOverlay.classList.remove('active');
                 this.game.state = 'play';
+                this.game._requestPointerLock();
             }
         };
         window.addEventListener('keydown', this._endingHandler);

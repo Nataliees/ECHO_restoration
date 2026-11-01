@@ -30,7 +30,10 @@ export class Player {
     }
 
     _bindKeyboard() {
+        window.addEventListener('blur', () => {this.keys=Object.create(null);});
         window.addEventListener('keydown', (e) => {
+            if(e.repeat && ['KeyE','KeyJ','Escape'].includes(e.code))return;
+            if(e.code==='KeyE' && this.game.state==='memory'){this.game.finishRecoveredRecording();return;}
             if (e.code === 'Escape') {
                 if (this.game.state === 'play') this.game.pause();
                 else if (this.game.state === 'paused') this.game.resume();

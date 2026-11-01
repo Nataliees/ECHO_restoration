@@ -25,7 +25,7 @@ const game={
     scene:{remove(){}},
     ui:{
         hidePrompt(){}, showPrompt(){}, showSubtitle(text){notifications.push(text);},
-        showNote(note){game.state='dialog';notifications.push(note.title);},
+        showNote(note,after){game.state='dialog';game.afterNote=after;notifications.push(note.title);},
         queueNotification(text){notifications.push(text);},
         showEndingChoice(choices, handler){chosen.push([...choices]);handler('accept');},
         showEnding(e){notifications.push(e.title);},
@@ -33,6 +33,7 @@ const game={
     },
     camera:{}, playBlip(){}, saveState(){},refreshActHUD(){},
     playRecoveredRecording(){game.state='memory';},
+    openMoralChoice(){game.state='choice';},
     loadLevel(next){ game.levelIndex=next;game.state='play';game.interactables=buildObjects(next); },
     unlockedEndings:new Set()
 };
@@ -49,7 +50,7 @@ function press(id){
     interactions.hoveredObject=o;
     interactions.interact();
 }
-function closeOverlay(){game.state='play';}
+function closeOverlay(){game.state='play';const after=game.afterNote;game.afterNote=null;after?.();}
 game.interactables=buildObjects(0);
 press('exit');
 assert.equal(game.levelIndex,0,'cannot exit before the drawing and radio');
@@ -61,17 +62,19 @@ press('emergency_receiver');
 assert.equal(game.memory.hasEvent('radio_echo'),true);
 assert.equal(game.state,'memory');closeOverlay();
 press('exit');assert.equal(game.levelIndex,1);
+press('reactor_override');assert.equal(game.memory.hasNote('reactor_override'),false,'third document gated');
 press('evacuation_order');closeOverlay();
 press('registry_damaged');closeOverlay();
 assert.equal(game.memory.hasFragment('evacuation_records'),false,'third document needed');
 press('reactor_override');closeOverlay();
 assert.equal(game.memory.hasFragment('evacuation_records'),true);
-press('exit');assert.equal(game.levelIndex,2);
+assert.equal(game.state,'choice');assert.equal(game.memory.chooseResponsibility('accept'),true);game.loadLevel(2);
+assert.equal(game.levelIndex,2);
 press('final_mirror');assert.equal(chosen.length,0,'toy must be found first');
 press('memory_toy');closeOverlay();
 assert.equal(game.memory.hasFragment('toy_memory'),true);
 press('final_mirror');
-assert.deepEqual(chosen[0],['accept','rewrite','restart']);
+assert.deepEqual(chosen[0],['accept','restart']);
 assert.ok(game.unlockedEndings.has('accept'));
 assert.ok(notifications.includes(endings.accept.title));
-console.log('PASS: full three-act interaction path including all gates, radio memory and final choice');
+console.log('PASS: full three-act interaction path including gated documents, radio memory and two-stage choices');

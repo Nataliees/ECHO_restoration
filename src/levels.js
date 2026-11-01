@@ -44,7 +44,7 @@ export const levels = [
         ],
         triggers: [{on: 'enter', pos: [0, 1.7, 3], whisper: 'whisper_lab_enter'}],
         spawn: {x: 0, y: 1.7, z: 4.2},
-        exit: {pos: [0, 1.2, 5.5], requires: ['evacuation_records'], nextLevel: 2}
+        exit: {pos: [0, 1.2, 5.5], requires: ['evacuation_records', 'moral_choice'], nextLevel: 2}
     },
     {
         id: 'capsule',

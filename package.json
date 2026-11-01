@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node test/story-tests.mjs && node test/interaction-tests.mjs && node test/markup-tests.mjs && node test/model-tests.mjs && node test/character-tests.mjs",
+    "test": "node test/story-tests.mjs && node test/interaction-tests.mjs && node test/markup-tests.mjs && node test/model-tests.mjs && node test/character-tests.mjs && node test/save-tests.mjs",
     "test:browser": "node test/browser-tests.cjs"
   }
 }
