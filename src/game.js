@@ -1,3 +1,4 @@
+import { PrologueSequence } from './prologue.js';
 import { dressLaterAct } from './later-acts.js';
 import { makeModel } from './models.js';
 import { dressAirlock } from './atmosphere.js';
@@ -41,12 +42,14 @@ export class Game {
         this.memory = new Memory();
         if (save.memory) this.memory.load(save.memory);
         this.introSeen = !!save.introSeen;
+        this.prologueSeen = !!save.prologueSeen || this.introSeen;
 
         this._initThree();
         this.ui = new UI(this);
         this.interactions = new Interactions(this);
         this.player = new Player(this, this.camera, this.renderer.domElement);
         this.intro = new IntroSequence(this);
+        this.prologue = new PrologueSequence(this);
 
         this._initAudio();
         this.recording = new RecoveredTransmission(this);
@@ -146,6 +149,8 @@ export class Game {
     }
 
     startNewGame() {
+        this.prologue?.stop();
+        this.prologueSeen=false;
         this.intro?.stop();
         this.finishRecoveredRecording();
         this._stopWhispers();
@@ -158,11 +163,16 @@ export class Game {
         this.introSeen = false;
         this._showScreen(null);
         this.ui.resetForMenu();
-        this.state = 'intro';
+        this.state = 'prologue';
         this.introSeen = false;
         this._loadLevel(0);
         if (document.pointerLockElement) document.exitPointerLock();
-        this.intro.start();
+        this.prologue.start();
+    }
+
+    _startIntroVideo() {
+        if(this.state!=='prologue')return;
+        this.prologueSeen=true;this.state='intro';this.saveState();this.intro.start();
     }
 
     _onIntroFinished() {
@@ -199,7 +209,8 @@ export class Game {
         this.intro?.stop();
         this._showScreen(null);
         this.introSeen = !!save.introSeen;
-        this.state = (this.levelIndex === 0 && !this.introSeen) ? 'intro' : 'play';
+        this.prologueSeen = !!save.prologueSeen || this.introSeen;
+        this.state = (this.levelIndex === 0 && !this.introSeen) ? (this.prologueSeen ? 'intro' : 'prologue') : 'play';
         this.ui.resetForMenu();
         this._loadLevel(this.levelIndex);
         this._restorePlayer(save.player);
@@ -209,7 +220,9 @@ export class Game {
             this.ui.showEnding(endings[this.completedEnding], {onBackToMenu: () => this.backToMenu()});
             return;
         }
-        if (this.state === 'intro') {
+        if (this.state === 'prologue') {
+            this.prologue.start();
+        } else if (this.state === 'intro') {
             if (document.pointerLockElement) document.exitPointerLock();
             this.intro.start();
         } else {
@@ -235,6 +248,7 @@ export class Game {
     }
 
     backToMenu() {
+        this.prologue?.stop();
         if (this.hasActiveRun) this.saveState();
         this.hasActiveRun = false;
         this.intro?.stop();
@@ -262,6 +276,7 @@ export class Game {
             level: this.levelIndex,
             memory: this.memory.serialize(),
             introSeen: this.introSeen,
+            prologueSeen: !!this.prologueSeen,
             player: this.player ? {x:this.player.position.x,z:this.player.position.z,yaw:this.player.yaw,pitch:this.player.pitch} : null
         };
     }
@@ -724,6 +739,11 @@ export class Game {
         if (this.state === 'play') {
             if (this.player) this.player.update(dt);
             if (this.interactions) this.interactions.updateHover();
+        }
+
+        if(this.state==='prologue' && this.prologue?.active){
+            this.prologue.update(dt);
+            if(this.state==='prologue')return;
         }
 
         if (this.state === 'intro' && this.intro?.active) {

@@ -2,7 +2,7 @@ const SAVE_KEY = 'echo_save_three_acts_v3';
 const SAVE_VERSION = 3;
 
 function defaultSave() {
-    return {version: SAVE_VERSION, level: 0, memory: null, endings: [], introSeen: false, player: null, branchCheckpoint: null, completedEnding: null};
+    return {version: SAVE_VERSION, level: 0, memory: null, endings: [], introSeen: false, prologueSeen: false, player: null, branchCheckpoint: null, completedEnding: null};
 }
 
 export const SaveSystem = {

@@ -12,7 +12,7 @@ const output=process.env.ECHO_SCREENSHOTS||path.join(require('node:os').tmpdir()
  await page.waitForTimeout(650);await page.screenshot({path:path.join(output,'menu-new.png')});
  await page.click('#btn-endings');await page.waitForSelector('#endings-screen.active');assert.match(await page.locator('#menu-endings').innerText(),/Пока ни один/);await page.click('#btn-endings-back');
  await page.click('#btn-about');await page.waitForSelector('#about-screen.active');await page.click('#btn-about-back');
- await page.click('#btn-start');await page.waitForFunction(()=>window.__game.state==='intro');await page.click('#intro-skip');await page.waitForFunction(()=>window.__game.state==='play');
+ await page.click('#btn-start');await page.waitForFunction(()=>window.__game.state==='prologue');await page.click('#prologue-skip');await page.waitForFunction(()=>window.__game.state==='intro');await page.click('#intro-skip');await page.waitForFunction(()=>window.__game.state==='play');
  async function focus(id,x,z){
   await page.evaluate(({id,x,z})=>{const g=window.__game,o=g.interactables.find(o=>o.userData.id===id||o.userData.type===id);if(!o)throw Error('missing '+id);g.player.setPosition(x,1.7,z);const dx=o.position.x-x,dz=o.position.z-z;g.player.yaw=Math.atan2(-dx,-dz);g.player.pitch=Math.atan2(o.position.y-1.7,Math.hypot(dx,dz));g.player._applyCamera();g.camera.updateMatrixWorld(true);g.interactions.updateHover();if(g.interactions.hoveredObject!==o)throw Error('unreachable '+id);},{id,x,z});
  }
