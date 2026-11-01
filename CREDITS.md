@@ -45,3 +45,8 @@ Jura by the Jura Project authors, distributed under the SIL Open Font License
 1.1. Source: https://github.com/google/fonts/tree/main/ofl/jura
 Local font and license: `assets/fonts/Jura.ttf`, `assets/fonts/Jura-OFL.txt`.
 The decorative menu frame is an original SVG created for ECHO.
+
+## Background music
+
+Remstage Music — In the house in a heartbeat. Audio file supplied by the project
+user, retained unchanged as `assets/background_music.mp3`.

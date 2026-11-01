@@ -1,3 +1,4 @@
+import { BackgroundMusic } from './music.js';
 import { PrologueSequence } from './prologue.js';
 import { dressLaterAct } from './later-acts.js';
 import { makeModel } from './models.js';
@@ -52,6 +53,7 @@ export class Game {
         this.prologue = new PrologueSequence(this);
 
         this._initAudio();
+        this.music = new BackgroundMusic(this);
         this.recording = new RecoveredTransmission(this);
         this._bindUI();
         this._updateMenuState();
@@ -149,7 +151,7 @@ export class Game {
     }
 
     startNewGame() {
-        this.prologue?.stop();
+        this.music?.reset();        this.prologue?.stop();
         this.prologueSeen=false;
         this.intro?.stop();
         this.finishRecoveredRecording();
@@ -236,6 +238,7 @@ export class Game {
         if (this.state !== 'play') return;
         this.saveState();
         this.state = 'paused';
+        this.music?.pause();
         document.exitPointerLock();
         this._showScreen('pause-screen');
     }
@@ -248,7 +251,7 @@ export class Game {
     }
 
     backToMenu() {
-        this.prologue?.stop();
+        this.music?.pause();        this.prologue?.stop();
         if (this.hasActiveRun) this.saveState();
         this.hasActiveRun = false;
         this.intro?.stop();
@@ -686,6 +689,7 @@ export class Game {
                 this.audioCtx.resume();
             }
         }
+        this.music?.update(0);
         return this.soundEnabled;
     }
 
@@ -735,6 +739,7 @@ export class Game {
     _animate() {
         requestAnimationFrame(() => this._animate());
         const dt = Math.min(this.clock.getDelta(), 0.05);
+        this.music?.update(dt);
 
         if (this.state === 'play') {
             if (this.player) this.player.update(dt);
