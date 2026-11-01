@@ -21,11 +21,11 @@ export class PrologueRadio {
         gain.gain.setValueAtTime(0,start);gain.gain.linearRampToValueAtTime(volume,start+.012);gain.gain.setValueAtTime(volume,start+duration-.035);gain.gain.linearRampToValueAtTime(0,start+duration);
         source.connect(filter).connect(gain).connect(this.master);this.nodes.push(source,filter,gain);source.start(start);return source;
     }
-    play(onComplete){
+    play(onComplete, options={}){
         this.stop();this.active=true;
         const ctx=this.game.audioCtx;
         if(!ctx||!this.buffer){this.timer=setTimeout(()=>{if(this.active)onComplete();},2400);return;}
-        const now=ctx.currentTime,offset=.214,voiceStart=now+.5,voiceEnd=voiceStart+this.buffer.duration-offset;
+        const now=ctx.currentTime,offset=options.full?0:.214,voiceStart=now+.5,voiceEnd=voiceStart+this.buffer.duration-offset;
         this.timeline={textEnd:now,preNoiseStart:now+.22,voiceStart,voiceEnd,postNoiseStart:voiceEnd+.02,introAt:voiceEnd+.26};
         this.master=ctx.createGain();this.master.gain.value=this.game.soundEnabled?1:0;this.master.connect(ctx.destination);this.nodes.push(this.master);
         const voice=ctx.createBufferSource(),high=ctx.createBiquadFilter(),low=ctx.createBiquadFilter(),saturation=ctx.createWaveShaper(),crush=ctx.createWaveShaper(),gain=ctx.createGain(),flutter=ctx.createOscillator(),flutterGain=ctx.createGain();

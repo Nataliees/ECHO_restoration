@@ -183,6 +183,7 @@ export class Game {
         this.hasActiveRun = true;
         this.state = 'play';
         this.saveState();
+        this.ui.announceLocation(levels[this.levelIndex]);
         this.ui.showSubtitle('Проект ECHO. Восстановление памяти запущено.', 4200);
         this._startWhispers();
         // Browsers usually prohibit pointer lock without a fresh user gesture.
@@ -377,7 +378,7 @@ export class Game {
             this.ui.updateEndingsCounter();
         }
         this.saveState();
-        if (this.state === 'play') this._startWhispers();
+        if (this.state === 'play') { this.ui?.announceLocation(level); this._startWhispers(); }
     }
 
     /* Публичный алиас для interactions.js */

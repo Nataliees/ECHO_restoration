@@ -1,3 +1,4 @@
+import { PrologueRadio } from './prologue-radio.js';
 /**
  * Recovered residential-sector transmission.
  * Uses the approved English daughter line and explosion audio, NEVER the hero line.
@@ -6,6 +7,7 @@
 export class RecoveredTransmission {
     constructor(game) {
         this.game = game;
+        this.prelude = new PrologueRadio(game);
         this.daughter = new Audio('./assets/intro_daughter.mp3');
         this.explosion = new Audio('./assets/intro_explosion.mp3');
         this.daughter.preload = 'auto';
@@ -93,6 +95,13 @@ export class RecoveredTransmission {
         if (this.game.audioCtx?.state === 'suspended') {
             this.game.audioCtx.resume().catch(() => {});
         }
+        onPhase('ВОССТАНОВЛЕННАЯ ПЕРЕДАЧА', '«Когда ты вернёшься?»');
+        const begin = () => { if (this.active) this.prelude.play(() => this._playLastFragment(onPhase,onComplete), {full:true}); };
+        const wait = () => { if (!this.active) return; if (this.prelude.ready) begin(); else this._later(wait, 30); };
+        wait();
+    }
+
+    _playLastFragment(onPhase,onComplete) {
         onPhase('ПОИСК СИГНАЛА · КАНАЛ ЖИЛОГО СЕКТОРА', '');
         this._noise(0.28, 0.22);
         this._later(() => {
@@ -129,6 +138,7 @@ export class RecoveredTransmission {
 
     stop() {
         this.active = false;
+        this.prelude.stop();
         this.timers.forEach(clearTimeout);
         this.timers.length = 0;
         this.daughter.pause();

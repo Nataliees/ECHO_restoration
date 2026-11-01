@@ -28,7 +28,7 @@ export class Interactions {
             while (obj && !this.game.interactables.includes(obj)) obj = obj.parent;
             if (obj) { target = obj; break; }
         }
-        if (target === this.hoveredObject) return;
+        if (target === this.hoveredObject) { if(target)this.game.ui.showPrompt(this._getPrompt(target)); return; }
         if (this.hoveredObject) this._setHighlight(this.hoveredObject, false);
         this.hoveredObject = target;
         if (target) {
@@ -56,7 +56,9 @@ export class Interactions {
     _getPrompt(group) {
         const d = group.userData;
         switch (d.type) {
-            case 'note': return `[E] Читать · ${d.label}`;
+            case 'note': return d.id==='reactor_override' && !['evacuation_order','registry_damaged'].every(id=>this.game.memory.hasNote(id))
+                ? 'Сначала изучите другие документы: приказ эвакуации и повреждённый реестр.'
+                : `[E] Читать · ${d.label}`;
             case 'drawing': return `[E] Восстановить · ${d.label}`;
             case 'toy': return `[E] Осмотреть · ${d.label}`;
             case 'radio': return '[E] Воспроизвести последнюю передачу';

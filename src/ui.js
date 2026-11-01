@@ -82,6 +82,17 @@ export class UI {
         else this.showSubtitle(text, 5000);
     }
 
+    announceLocation(level) {
+        const panel=document.getElementById('location-announcement');
+        if(!panel||!level)return;
+        clearTimeout(this._locationTimer);
+        panel.classList.remove('visible');
+        panel.querySelector('span').textContent=`Акт ${Number(level.act)}. ${level.name}`;
+        void panel.offsetWidth;
+        panel.classList.add('visible');
+        this._locationTimer=setTimeout(()=>panel.classList.remove('visible'),2000);
+    }
+
     updateAct(level, memory) {
         if (!level) return;
         this.actLabel && (this.actLabel.textContent = `АКТ ${level.act} / 03`);
@@ -191,6 +202,8 @@ export class UI {
     }
 
     resetForMenu() {
+        clearTimeout(this._locationTimer);
+        document.getElementById('location-announcement')?.classList.remove('visible');
         this._afterNote = null;
         this.hideMoralChoice();
         this.hidePrompt();

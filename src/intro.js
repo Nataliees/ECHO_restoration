@@ -142,13 +142,7 @@ export class IntroSequence {
     }
 
     _positionSkipButton() {
-        const screen=document.getElementById('prologue-screen'),button=document.getElementById('prologue-skip');
-        if(!screen||!button)return;
-        const display=screen.style.display,visibility=screen.style.visibility;
-        screen.style.visibility='hidden';screen.style.display='flex';
-        const top=button.getBoundingClientRect().top;
-        screen.style.display=display;screen.style.visibility=visibility;
-        document.documentElement.style.setProperty('--opening-skip-top',`${Math.max(12,Math.min(top,window.innerHeight-44))}px`);
+        // Shared CSS anchors both opening skip buttons at the bottom center.
     }
 
     start() {
