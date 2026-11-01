@@ -45,10 +45,9 @@
         <h1 class="echo-logo">ECHO</h1>
         <nav class="main-menu-actions" aria-label="Главное меню">
             <button id="btn-start" class="menu-btn">Новая игра</button>
-            <button id="btn-continue" class="menu-btn" hidden>Продолжить</button>
-            <button id="btn-return-branch" class="menu-btn" hidden>Вернуться к развилке</button>
+            <button id="btn-continue" class="menu-btn" disabled>Продолжить</button>
+            <button id="btn-return-branch" class="menu-btn" disabled>Вернуться к развилке</button>
             <button id="btn-about" class="menu-btn">Об игре</button>
-            <button id="btn-exit" class="menu-btn">Выйти</button>
         </nav>
         <button id="btn-endings" class="menu-text-btn" type="button">Открытые финалы</button>
         </div>
@@ -65,11 +64,6 @@
         <p class="about-copy">После катастрофы главный инженер просыпается в комплексе восстановления памяти ECHO. Детский рисунок, оборванная передача и повреждённые документы связывают его с прошлым. Ему предстоит решить, какую ответственность он готов принять и что сделать со своими воспоминаниями.</p>
         <a class="about-credits" href="CREDITS.md" target="_blank" rel="noopener">Авторы и лицензии</a>
         <button id="btn-about-back" class="menu-btn">В главное меню</button>
-    </div>
-    <div id="exit-screen" class="screen">
-        <h2>Игра завершена</h2>
-        <p class="about-copy">Прогресс сохранён. Эту вкладку можно закрыть.</p>
-        <button id="btn-exit-back" class="menu-btn">В главное меню</button>
     </div>
     <div id="moral-overlay" class="overlay" role="dialog" aria-modal="true" aria-label="Первый моральный выбор">
         <div class="note-content">
@@ -111,10 +105,10 @@
     <div id="ending-overlay" class="overlay">
         <div class="ending-content">
             <div class="panel-kicker">ECHO / FINAL RESTORATION PROTOCOL</div>
-            <div id="ending-choice"></div>
-            <div id="ending-visual" class="ending-visual"></div>
             <h2 id="ending-title"></h2>
             <div id="ending-status"></div>
+            <div id="ending-choice"></div>
+            <div id="ending-visual" class="ending-visual"></div>
             <div id="ending-text" class="ending-text"></div>
             <button id="ending-back" class="menu-btn">В главное меню</button>
         </div>

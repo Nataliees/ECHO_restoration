@@ -887,3 +887,40 @@ body.menu-view #subtitle-box, body.menu-view #interact-prompt { display:none !im
     #menu-screen .main-menu-actions .menu-btn { padding:9px 10px; font-size:13px; }
 }
 @media(prefers-reduced-motion:reduce) { #menu-screen .menu-btn,#menu-screen .menu-btn::before,#menu-screen .menu-btn::after { transition:none; } }
+
+/* Dialogs share the frosted terminal treatment and text controls. */
+:is(#moral-overlay,#ending-overlay,#note-overlay) .menu-btn { position:relative; min-width:0; border:0; border-radius:0; background:transparent; box-shadow:none; padding:15px 14px;
+    font-family:'ECHO Interface',sans-serif; font-size:15px; font-weight:600; line-height:1.3; letter-spacing:.12em; text-transform:uppercase; color:#bed3d3;
+    transition:color .18s ease,background .18s ease,text-shadow .18s ease;
+}
+:is(#moral-overlay,#ending-overlay,#note-overlay) .menu-btn::before { content:''; position:absolute; inset:0; pointer-events:none;
+    background:linear-gradient(90deg,transparent,#71d9c411,transparent);
+    border-bottom:1px solid #79d7c900; clip-path:polygon(0 45%,8% 45%,12% 85%,84% 85%,89% 65%,100% 65%,100% 100%,0 100%); opacity:0; transition:opacity .18s ease;
+}
+:is(#moral-overlay,#ending-overlay,#note-overlay) .menu-btn::after { content:''; position:absolute; bottom:2px; left:18%; right:18%; height:1px;
+    background:linear-gradient(90deg,transparent,#79d7c9,transparent); opacity:0; transition:opacity .18s ease;
+}
+:is(#moral-overlay,#ending-overlay,#note-overlay) .menu-btn:is(:hover,:focus-visible) { color:#e9fff9; text-shadow:0 0 16px #8affd578; background:#76d3c606; outline:none; }
+:is(#moral-overlay,#ending-overlay,#note-overlay) .menu-btn:is(:hover,:focus-visible)::before,
+:is(#moral-overlay,#ending-overlay,#note-overlay) .menu-btn:is(:hover,:focus-visible)::after { opacity:1; }
+:is(#moral-overlay,#ending-overlay,#note-overlay) .menu-btn:active { color:#fff; background:#92d9c517; }
+:is(#moral-overlay,#ending-overlay,#note-overlay) .menu-btn:disabled { opacity:.35; cursor:wait; }
+
+#menu-screen .main-menu-actions .menu-btn:disabled,
+:is(#moral-overlay,#ending-overlay,#note-overlay) .menu-btn:disabled { opacity:.5; cursor:default; color:#bed3d3; background:transparent; text-shadow:none; box-shadow:none; }
+#menu-screen .main-menu-actions .menu-btn:disabled::before,
+#menu-screen .main-menu-actions .menu-btn:disabled::after { opacity:0; }
+:is(#moral-overlay,#ending-overlay,#note-overlay) { overflow-y:auto; scrollbar-width:none; padding:clamp(16px,4vh,40px); }
+:is(#moral-overlay,#ending-overlay,#note-overlay)::-webkit-scrollbar { display:none; }
+:is(#moral-overlay,#ending-overlay,#note-overlay) > div {
+    flex-shrink:0; max-height:none; overflow:visible; border:1px solid #74cdb64a;
+    background:linear-gradient(128deg,#10292aea,#07161df2 47%,#13282ced);
+    -webkit-backdrop-filter:blur(22px); backdrop-filter:blur(22px);
+    box-shadow:inset 0 0 50px #72c8ca08,0 20px 80px #0009;
+}
+:is(#moral-overlay,#ending-overlay,#note-overlay) :is(h2,.menu-btn) { font-family:'ECHO Interface',sans-serif; }
+:is(#moral-overlay,#ending-overlay,#note-overlay) :is(.note-text,.ending-text) { max-height:none; overflow:visible; font-size:clamp(13px,1.6vh,16px); line-height:1.65; }
+#ending-choice { gap:12px; }
+#ending-choice .ending-option { align-items:center; text-align:center; }
+#ending-choice .ending-option small { line-height:1.5; font-family:'ECHO Interface',sans-serif; }
+@media(max-height:650px) { :is(#moral-overlay,#ending-overlay,#note-overlay) > div { padding:20px; margin:auto; } :is(#moral-overlay,#ending-overlay,#note-overlay) h2 { margin:6px 0 14px; } }

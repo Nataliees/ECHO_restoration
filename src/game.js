@@ -108,8 +108,6 @@ export class Game {
         document.getElementById('btn-endings-back')?.addEventListener('click', () => this._showScreen('menu-screen'));
         document.getElementById('btn-about')?.addEventListener('click', () => this._showScreen('about-screen'));
         document.getElementById('btn-about-back')?.addEventListener('click', () => this._showScreen('menu-screen'));
-        document.getElementById('btn-exit-back')?.addEventListener('click', () => {this.state='menu';this._showScreen('menu-screen');});
-        document.getElementById('btn-exit')?.addEventListener('click', () => this.exitGame());
         if (startBtn) startBtn.addEventListener('click', () => this.startNewGame());
         if (continueBtn) continueBtn.addEventListener('click', () => this.continueGame());
         if (resumeBtn) resumeBtn.addEventListener('click', () => this.resume());
@@ -130,16 +128,16 @@ export class Game {
             const hasSave = typeof SaveSystem.hasSave === 'function'
                 ? SaveSystem.hasSave()
                 : !!localStorage.getItem('echo_save');
-            continueBtn.disabled = !hasSave;
-            continueBtn.hidden = !hasSave;
+            continueBtn.disabled = !hasSave || this.unlockedEndings.size === 0;
+            continueBtn.hidden = false;
         }
         const branch = document.getElementById('btn-return-branch');
-        if (branch) branch.hidden = !this.branchCheckpoint;
+        if (branch) {branch.hidden=false;branch.disabled=!this.branchCheckpoint || this.unlockedEndings.size===0;}
         if (this.ui) this.ui.updateEndingsCounter();
     }
 
     _showScreen(id) {
-        document.body.classList.toggle('menu-view', ['menu-screen','about-screen','exit-screen','endings-screen'].includes(id));
+        document.body.classList.toggle('menu-view', ['menu-screen','about-screen','endings-screen'].includes(id));
         document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
         if (id) {
             const el = document.getElementById(id);
@@ -160,12 +158,11 @@ export class Game {
         this.introSeen = false;
         this._showScreen(null);
         this.ui.resetForMenu();
-        this.state = 'play';
-        this.introSeen = true;
+        this.state = 'intro';
+        this.introSeen = false;
         this._loadLevel(0);
         if (document.pointerLockElement) document.exitPointerLock();
-        this._requestPointerLock();
-        this._startWhispers();
+        this.intro.start();
     }
 
     _onIntroFinished() {
@@ -181,7 +178,7 @@ export class Game {
     }
 
     continueGame() {
-        if (!SaveSystem.hasSave()) return;
+        if (!SaveSystem.hasSave() || this.unlockedEndings.size===0) return;
         this.audioCtx?.resume().catch(()=>{});
         const save = SaveSystem.load();
         this.hasActiveRun = true;
@@ -297,20 +294,11 @@ export class Game {
 
     returnToBranch() {
         const cp=this.branchCheckpoint;
-        if(!cp)return;
+        if(!cp || this.unlockedEndings.size===0)return;
         this.intro?.stop();this.finishRecoveredRecording();this.ui.resetForMenu();
         this.memory=new Memory();this.memory.load(cp.memory);this.memory.moralChoice=null;
         this.completedEnding=null;this.introSeen=true;this.hasActiveRun=true;
         this._showScreen(null);this.state='play';this._loadLevel(1);this._restorePlayer(cp.player);this.saveState();this.openMoralChoice();
-    }
-
-    exitGame() {
-        if(this.hasActiveRun)this.backToMenu();
-        this.recording?.stop();this.intro?.stop();this._stopWhispers();this.audioCtx?.suspend();
-        this.state='exited';
-        this._showScreen('exit-screen');
-        // Browsers only permit closing windows that were opened by script.
-        if(window.opener)window.close();
     }
 
     /* ================= Звук (alias) ================= */
@@ -732,7 +720,6 @@ export class Game {
     _animate() {
         requestAnimationFrame(() => this._animate());
         const dt = Math.min(this.clock.getDelta(), 0.05);
-        if(this.state==='exited')return;
 
         if (this.state === 'play') {
             if (this.player) this.player.update(dt);
