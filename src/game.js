@@ -238,7 +238,7 @@ export class Game {
                 if (node.material) {
                     const materials = Array.isArray(node.material) ? node.material : [node.material];
                     materials.forEach(mat => {
-                        new Set([mat.map, mat.bumpMap, mat.roughnessMap, mat.emissiveMap]).forEach(t => t?.dispose());
+                        new Set([mat.map, mat.bumpMap, mat.normalMap, mat.specularColorMap, mat.roughnessMap, mat.emissiveMap]).forEach(t => t?.dispose());
                         mat.dispose();
                     });
                 }

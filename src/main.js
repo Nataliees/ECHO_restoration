@@ -1,5 +1,6 @@
 import { Game } from './game.js';
 import { preloadModels } from './models.js';
+import { preloadCharacter } from './character-assets.js';
 
 const start = document.getElementById('btn-start');
 const serial = document.querySelector('.menu-serial');
@@ -8,7 +9,7 @@ start.disabled = true;
 document.getElementById('btn-continue').disabled = true;
 serial.textContent = 'ЗАГРУЗКА ОБОРУДОВАНИЯ ECHO…';
 try {
-    await preloadModels();
+    await Promise.all([preloadModels(), preloadCharacter()]);
     const game = new Game();
     game.init();
     window.__game = game;

@@ -28,6 +28,7 @@ export function installMirror(game, interaction) {
         avatar.position.set(player.position.x,0,player.position.z);
         avatar.rotation.y=player.yaw+Math.PI;
         head.rotation.x=-player.pitch;
+        head.userData.update?.(dt);
         for(const {leg,arm,side} of limbs){
             const target=moving?Math.sin(phase)*.32*side:0;
             leg.rotation.x=THREE.MathUtils.damp(leg.rotation.x,target,14,dt);

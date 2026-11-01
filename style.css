@@ -789,3 +789,6 @@ body.intro-active #crosshair { display:none !important; }
     text-align: center;
     margin: 16px 0 30px;
 }
+
+.menu-version a { color: inherit; text-decoration-color: #59716b; }
+.menu-version a:hover { color: #d2ece2; }
