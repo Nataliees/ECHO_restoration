@@ -1,3 +1,4 @@
+import { buildGlassShatter } from './glass-shatter.js';
 import * as THREE from 'three';
 
 /**
@@ -50,7 +51,6 @@ export class IntroSequence {
         this.video.addEventListener('playing', () => {
             videoMat.map = this.texture;
             videoMat.needsUpdate = true;
-            this._setFragmentMap(this.texture);
         });
 
         // The white flash and black title backdrop are actual Three.js quads.
@@ -58,7 +58,13 @@ export class IntroSequence {
         this.alarmOverlay = this._makeOverlay(0x9b0710, 0.12);
         this.black = this._makeOverlay(0x010205, 0.4);
 
-        const crackGeom = this._makeCrackGeometry();
+        const glass=buildGlassShatter(game.renderer);
+        this.glassEnvironmentTarget=glass.environmentTarget;
+        this.shatterPieces=glass.pieces;
+        this.scene.add(new THREE.AmbientLight(0xa7c8d9,.9));
+        const glassKey=new THREE.PointLight(0xd5f0ff,14,8);glassKey.position.set(-1.2,1.8,2);this.scene.add(glassKey);
+        const glassAlarm=new THREE.PointLight(0xff5238,7,7);glassAlarm.position.set(1.6,-.4,1.8);this.scene.add(glassAlarm);
+        const crackGeom = glass.cracks;
         this.crackMaterial = new THREE.LineBasicMaterial({
             color: 0xddefff,
             transparent: true,
@@ -74,7 +80,6 @@ export class IntroSequence {
         crackGeom.setDrawRange(0, 0);
 
         this.shatterGroup = new THREE.Group();
-        this.shatterPieces = this._makeShatterPieces();
         this.shatterPieces.forEach(piece => this.shatterGroup.add(piece.mesh));
         this.shatterGroup.visible = false;
         this.shatterGroup.position.z = -0.18;
@@ -117,165 +122,6 @@ export class IntroSequence {
         return mesh;
     }
 
-    _makeCrackGeometry() {
-        // Deterministic fractures. Each crack is a pair of 3D vertices.
-        // The main ray endpoints are also reused as the boundaries for the
-        // shatter fragments, so the breakup follows the visible crack pattern.
-        let seed = 12711;
-        const rnd = () => {
-            seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
-            return seed / 4294967296;
-        };
-        const points = [];
-        const segment = (a, b) => points.push(a[0], a[1], 0, b[0], b[1], 0);
-        const center = [-0.30, 0.08];
-        this.crackCenter = new THREE.Vector2(center[0], center[1]);
-        this.crackRays = [];
-        for (let ray = 0; ray < 12; ray++) {
-            let point = center;
-            const theta = ray * Math.PI * 2 / 12 + rnd() * 0.23;
-            const reach = 0.55 + rnd() * 1.05;
-            const steps = 3 + Math.floor(rnd()*3);
-            for (let k = 1; k <= steps; k++) {
-                const r = reach * k / steps;
-                const next = [center[0] + Math.cos(theta)*r + (rnd()-.5)*.12,
-                              center[1] + Math.sin(theta)*r + (rnd()-.5)*.12];
-                segment(point, next);
-                if (k >= 2) {
-                    let twig = next;
-                    const twist = theta + (rnd() > .5 ? 1 : -1) * (.65 + rnd()*.55);
-                    for (let m = 0; m < 2; m++) {
-                        const nextTwig = [twig[0] + Math.cos(twist)*(.12+m*.07),
-                                          twig[1] + Math.sin(twist)*(.12+m*.07)];
-                        segment(twig,nextTwig);
-                        twig=nextTwig;
-                    }
-                }
-                point = next;
-            }
-            this.crackRays.push({
-                angle: Math.atan2(point[1] - center[1], point[0] - center[0]),
-                endpoint: new THREE.Vector2(point[0], point[1])
-            });
-        }
-        this.crackRays.sort((a, b) => a.angle - b.angle);
-        const geometry = new THREE.BufferGeometry();
-        geometry.setAttribute('position', new THREE.Float32BufferAttribute(points, 3));
-        return geometry;
-    }
-
-    _rayToBounds(angle) {
-        const c = this.crackCenter;
-        const dx = Math.cos(angle);
-        const dy = Math.sin(angle);
-        const candidates = [];
-        if (Math.abs(dx) > 1e-5) {
-            const tx1 = (-1 - c.x) / dx;
-            const tx2 = (1 - c.x) / dx;
-        }
-        const pushCandidate = (t) => {
-            if (t <= 0) return;
-            const x = c.x + dx * t;
-            const y = c.y + dy * t;
-            if (x >= -1.001 && x <= 1.001 && y >= -1.001 && y <= 1.001) {
-                candidates.push({t, point: new THREE.Vector2(x, y)});
-            }
-        };
-        if (Math.abs(dx) > 1e-5) {
-            pushCandidate((-1 - c.x) / dx);
-            pushCandidate((1 - c.x) / dx);
-        }
-        if (Math.abs(dy) > 1e-5) {
-            pushCandidate((-1 - c.y) / dy);
-            pushCandidate((1 - c.y) / dy);
-        }
-        candidates.sort((a, b) => a.t - b.t);
-        return candidates.length ? candidates[0].point : new THREE.Vector2(c.x + dx, c.y + dy);
-    }
-
-    _makeFragmentGeometry(points) {
-        const shape = new THREE.Shape();
-        shape.moveTo(points[0].x, points[0].y);
-        for (let i = 1; i < points.length; i++) shape.lineTo(points[i].x, points[i].y);
-        shape.closePath();
-        const geom = new THREE.ShapeGeometry(shape);
-        const pos = geom.attributes.position;
-        const uv = new Float32Array(pos.count * 2);
-        for (let i = 0; i < pos.count; i++) {
-            const x = pos.getX(i);
-            const y = pos.getY(i);
-            uv[i * 2] = (x + 1) * 0.5;
-            uv[i * 2 + 1] = (y + 1) * 0.5;
-        }
-        geom.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
-        return geom;
-    }
-
-
-    _makeShatterPieces() {
-        const pieces = [];
-        let seed = 8842;
-        const rnd = () => {
-            seed = (Math.imul(seed, 1103515245) + 12345) >>> 0;
-            return seed / 4294967296;
-        };
-        const center = this.crackCenter.clone();
-        const rays = this.crackRays;
-        for (let i = 0; i < rays.length; i++) {
-            const a = rays[i];
-            const b = rays[(i + 1) % rays.length];
-            const outerA = this._rayToBounds(a.angle);
-            const outerB = this._rayToBounds(b.angle);
-            const geom = this._makeFragmentGeometry([
-                center,
-                a.endpoint,
-                outerA,
-                outerB,
-                b.endpoint
-            ]);
-            const mat = new THREE.MeshBasicMaterial({
-                map: this.fallbackTexture,
-                transparent: true,
-                opacity: 0,
-                toneMapped: false,
-                side: THREE.DoubleSide
-            });
-            const mesh = new THREE.Mesh(geom, mat);
-            mesh.visible = false;
-
-            const centroid = new THREE.Vector2(
-                (center.x + a.endpoint.x + outerA.x + outerB.x + b.endpoint.x) / 5,
-                (center.y + a.endpoint.y + outerA.y + outerB.y + b.endpoint.y) / 5
-            );
-            const dir = centroid.clone().sub(center).normalize();
-            const velocity = new THREE.Vector3(
-                dir.x * (0.42 + rnd() * 0.62),
-                dir.y * (0.42 + rnd() * 0.62),
-                0
-            );
-            const spin = (rnd() - 0.5) * 4.2;
-            pieces.push({
-                mesh,
-                velocity,
-                spin,
-                delay: rnd() * 0.075,
-                driftX: 0,
-                driftY: 0
-            });
-        }
-        return pieces;
-    }
-
-
-    _setFragmentMap(map) {
-        if (!this.shatterPieces) return;
-        this.shatterPieces.forEach(piece => {
-            piece.mesh.material.map = map;
-            piece.mesh.material.needsUpdate = true;
-        });
-    }
-
-
     _onResize() {
         const aspect = window.innerWidth / Math.max(1,window.innerHeight);
         this.camera.left = -aspect;
@@ -290,11 +136,24 @@ export class IntroSequence {
         const overlays = [this.white,this.alarmOverlay,this.black];
         this.videoPlane.scale.set(width/2,height/2,1);
         this.shatterGroup.scale.set(width/2,height/2,1);
+        this.cracks.scale.set(width/2,height/2,1);
         overlays.forEach(plane => plane.scale.set(aspect,1,1));
+        this._positionSkipButton();
+    }
+
+    _positionSkipButton() {
+        const screen=document.getElementById('prologue-screen'),button=document.getElementById('prologue-skip');
+        if(!screen||!button)return;
+        const display=screen.style.display,visibility=screen.style.visibility;
+        screen.style.visibility='hidden';screen.style.display='flex';
+        const top=button.getBoundingClientRect().top;
+        screen.style.display=display;screen.style.visibility=visibility;
+        document.documentElement.style.setProperty('--opening-skip-top',`${Math.max(12,Math.min(top,window.innerHeight-44))}px`);
     }
 
     start() {
         this.stop();
+        this._positionSkipButton();
         this.elapsed = 0;
         this.active = true;
         this.playedDaughter = false;
@@ -308,18 +167,18 @@ export class IntroSequence {
         this.crackMaterial.opacity = 0;
         this.cracks.geometry.setDrawRange(0,0);
         this.videoPlane.visible = true;
+        this.videoPlane.material.color.set(0xffffff);
         this.videoPlane.position.set(0,0,-0.2);
         this.videoPlane.rotation.set(0,0,0);
         this.videoPlane.material.map = this.fallbackTexture;
         this.videoPlane.material.needsUpdate = true;
-        this._setFragmentMap(this.fallbackTexture);
         this.shatterGroup.visible = false;
         this.shatterGroup.position.set(0,0,-0.18);
         this.shatterGroup.rotation.set(0,0,0);
         this.shatterPieces.forEach(piece => {
             piece.mesh.visible = false;
-            piece.mesh.material.opacity = 0;
-            piece.mesh.position.set(0, 0, 0);
+            piece.materials.forEach(m=>m.opacity=1);
+            piece.mesh.position.set(piece.center.x,piece.center.y,0);
             piece.mesh.rotation.set(0,0,0);
             piece.mesh.scale.set(1,1,1);
         });
@@ -536,20 +395,23 @@ export class IntroSequence {
         if (t >= 8.90) {
             if (!this.shatterStarted) {
                 this.shatterStarted = true;
-                this.videoPlane.visible = false;
+                this.videoPlane.visible = true;
+                this.crackMaterial.opacity=0;
                 this.shatterGroup.visible = true;
                 this.shatterPieces.forEach(piece => {
                     piece.mesh.visible = true;
-                    piece.mesh.material.opacity = 1;
+                    piece.materials.forEach(m=>m.opacity=1);
                 });
             }
-            const p = Math.min(1, (t - 8.90) / 0.62);
-            this.shatterPieces.forEach(piece => {
-                const q = Math.max(0, p - piece.delay);
-                piece.mesh.position.x = piece.velocity.x * q * 1.6;
-                piece.mesh.position.y = piece.velocity.y * q * 1.45;
-                piece.mesh.rotation.z = piece.spin * q;
-                piece.mesh.material.opacity = Math.max(0, 1 - q * 2.1);
+            const time=Math.max(0,t-8.90);
+            this.videoPlane.material.color.setScalar(Math.max(.03,1-Math.min(1,time/.65)*.95));
+            this.shatterPieces.forEach(piece=>{
+                const q=Math.max(0,time-piece.delay);
+                piece.mesh.position.set(piece.center.x+piece.velocity.x*q*1.65,piece.center.y+piece.velocity.y*q*1.4-q*q*.8,piece.velocity.z*q);
+                piece.mesh.rotation.set(piece.spin.x*q,piece.spin.y*q,piece.spin.z*q);
+                piece.mesh.scale.setScalar(1+piece.velocity.z*q*.23);
+                const opacity=1-THREE.MathUtils.smoothstep(time,.65,1.08);
+                piece.materials[0].opacity=opacity;piece.materials[1].opacity=opacity*.9;
             });
         }
 

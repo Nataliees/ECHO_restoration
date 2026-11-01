@@ -436,20 +436,9 @@ body.intro-active #mobile-controls {
     font-weight: 400;
 }
 #intro-skip {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    min-width: 0;
-    pointer-events: auto;
-    font-size: 12px;
-    letter-spacing: .07em;
-    padding: 9px 15px;
-    background: rgba(0,0,0,.4);
-    border: 1px solid rgba(180,220,245,.35);
-    border-radius: 4px;
-    opacity: .75;
+    position:absolute;top:var(--opening-skip-top,80%);left:50%;right:auto;bottom:auto;transform:translateX(-50%);
+    min-width:0;pointer-events:auto;border:0;border-radius:0;background:transparent;box-shadow:none;opacity:1;
 }
-#intro-skip:hover { opacity: 1; }
 
 /* ========== ECHO: restoration protocol UI / three-act redesign ========== */
 :root {
@@ -940,3 +929,9 @@ body.menu-view #subtitle-box, body.menu-view #interact-prompt { display:none !im
 
 .prologue-copy, #prologue-skip { font-family:'Courier New',Courier,monospace; }
 .prologue-copy { letter-spacing:.025em; color:#d1d0c5; }
+
+#intro-skip,#prologue-skip { font-family:'Courier New',Courier,monospace; font-size:12px; font-weight:400; line-height:normal; letter-spacing:.06em; padding:6px 12px; color:#78968e; background:transparent; border:0; box-shadow:none; opacity:1; }
+#intro-skip:hover,#prologue-skip:hover { color:#e3f3ef; background:transparent; text-decoration:underline; box-shadow:none; }
+#intro-skip:focus-visible,#prologue-skip:focus-visible { outline:1px solid #a5dbd4;outline-offset:4px; }
+@media(max-height:620px) { #intro-caption { bottom:65px; font-size:16px; } }
+#intro-skip { margin:0; }
