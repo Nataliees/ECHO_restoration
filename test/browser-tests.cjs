@@ -37,6 +37,12 @@ fs.mkdirSync(output,{recursive:true});
  });
  console.log('mirror',mirror);assert.ok(mirror.changed>500,'engineer actually contributes pixels to mirror');
  assert.ok(mirror.avatarHidden);assert.ok(Math.abs(mirror.reflectedZ-(2*mirror.mirrorZ-mirror.playerZ))<.001);
+ const pose=await page.evaluate(()=>{
+  const g=window.__game;g.player.position.x=.2;g.player.yaw=.15;g.player.pitch=.1;g.mirror.update(.1);
+  const result={x:g.mirror.avatar.position.x,yaw:g.mirror.avatar.rotation.y,pitch:g.mirror.head.rotation.x,swing:g.mirror.avatar.getObjectByName('engineer-leg-1').rotation.x};
+  g.player.setPosition(0,1.7,-2.35);g.mirror.update(.1);return result;
+ });
+ assert.equal(pose.x,.2);assert.ok(Math.abs(pose.yaw-Math.PI-.15)<.001);assert.equal(pose.pitch,-.1);assert.ok(Math.abs(pose.swing)>.01);
  const gates=await page.evaluate(()=>{
   const g=window.__game;
   function focus(id,x,z){const obj=g.interactables.find(o=>o.userData.id===id);g.player.setPosition(x,1.7,z);g.camera.lookAt(obj.position);g.camera.updateMatrixWorld(true);g.interactions.updateHover();return g.interactions.hoveredObject?.userData.id;}

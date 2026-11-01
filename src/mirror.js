@@ -1,50 +1,6 @@
+import { createEngineer } from './engineer.js';
 import * as THREE from 'three';
 import { Reflector } from '../assets/vendor/Reflector.js';
-
-function createEngineer() {
-    const root = new THREE.Group(); root.name = 'engineer-reflection';
-    const skin = new THREE.MeshStandardMaterial({color:0x96795f,roughness:.88});
-    const coat = new THREE.MeshStandardMaterial({color:0x394d4c,roughness:.8});
-    const shirt = new THREE.MeshStandardMaterial({color:0xb7b8a4,roughness:.93});
-    const dark = new THREE.MeshStandardMaterial({color:0x292e29,roughness:.95});
-    const eye = new THREE.MeshStandardMaterial({color:0x171b18,roughness:.5});
-    const metal = new THREE.MeshStandardMaterial({color:0xc5ab6d,metalness:.5,roughness:.5});
-    const ellipsoid=(parent,pos,scale,material)=>{
-        const m=new THREE.Mesh(new THREE.SphereGeometry(1,20,16),material);
-        m.position.set(...pos);m.scale.set(...scale);m.castShadow=true;parent.add(m);return m;
-    };
-    const torso = new THREE.Mesh(new THREE.LatheGeometry([[.13,0],[.14,.08],[.15,.28],[.16,.48],[.12,.56],[.07,.58]].map(p=>new THREE.Vector2(...p)),24),coat);
-    torso.position.y=.96;torso.scale.x=1.65;root.add(torso);
-    ellipsoid(root,[0,1.38,.14],[.067,.17,.02],shirt);
-    // Collar, zipper, belt and an engineer's identification plate.
-    for(const side of [-1,1])ellipsoid(root,[side*.075,1.53,.142],[.055,.045,.019],shirt).rotation.z=side*.5;
-    ellipsoid(root,[0,1.25,.155],[.012,.18,.012],metal);
-    ellipsoid(root,[0,.99,0],[.23,.035,.14],dark);
-    ellipsoid(root,[-.13,1.38,.15],[.06,.034,.015],metal);
-    const head=new THREE.Group();head.position.y=1.65;root.add(head);
-    ellipsoid(head,[0,.05,0],[.125,.17,.12],skin);
-    ellipsoid(head,[0,.16,-.025],[.128,.08,.11],dark);
-    ellipsoid(head,[0,-.055,.018],[.095,.075,.09],skin);
-    ellipsoid(head,[0,.035,.12],[.025,.047,.032],skin);
-    for(const side of [-1,1]){
-        ellipsoid(head,[side*.124,.035,0],[.024,.043,.025],skin);
-        ellipsoid(head,[side*.048,.068,.108],[.027,.013,.014],shirt);
-        ellipsoid(head,[side*.048,.068,.12],[.01,.01,.006],eye);
-        ellipsoid(head,[side*.049,.091,.108],[.032,.009,.01],dark);
-    }
-    ellipsoid(head,[0,-.025,.112],[.036,.006,.008],dark);
-    const limbs=[];
-    for(const side of [-1,1]){
-        const leg=new THREE.Group();leg.position.set(side*.115,.96,0);root.add(leg);
-        ellipsoid(leg,[0,-.39,0],[.095,.43,.095],coat);
-        ellipsoid(leg,[0,-.85,.045],[.1,.08,.17],dark);
-        const arm=new THREE.Group();arm.position.set(side*.255,1.47,0);root.add(arm);
-        ellipsoid(arm,[side*.035,-.23,0],[.075,.27,.075],coat);
-        ellipsoid(arm,[side*.045,-.51,.015],[.05,.075,.045],skin);
-        limbs.push({leg,arm,side});
-    }
-    return {root,head,limbs};
-}
 
 export function installMirror(game, interaction) {
     const {root:avatar,head,limbs}=createEngineer();
