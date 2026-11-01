@@ -938,5 +938,5 @@ body.menu-view #subtitle-box, body.menu-view #interact-prompt { display:none !im
 @media(max-height:620px) { #prologue-screen { justify-content:flex-start; padding:25px; gap:20px; } .prologue-copy { font-size:13px; line-height:1.65; } }
 @media(prefers-reduced-motion:reduce) { #prologue-text p:last-child::after { animation:none; } }
 
-.prologue-copy, #prologue-skip { font-family:Courier,'Courier New',monospace; }
+.prologue-copy, #prologue-skip { font-family:'Courier New',Courier,monospace; }
 .prologue-copy { letter-spacing:.025em; color:#d1d0c5; }
