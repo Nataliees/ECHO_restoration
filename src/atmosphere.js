@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 // All surfaces are generated locally; no external textures or network requests.
-function surface(kind, repeatX = 1, repeatY = 1) {
+export function surface(kind, repeatX = 1, repeatY = 1) {
     const canvas = document.createElement('canvas');
     canvas.width = canvas.height = 512;
     const ctx = canvas.getContext('2d');

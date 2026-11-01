@@ -1,3 +1,4 @@
+import { dressLaterAct } from './later-acts.js';
 import { makeModel } from './models.js';
 import { dressAirlock } from './atmosphere.js';
 import * as THREE from 'three';
@@ -225,6 +226,8 @@ export class Game {
 
     /* ================= Уровни ================= */
     _clearLevel() {
+        this.mirror?.dispose();
+        this.mirror = null;
         this.colliders = [];
         this.interactables = [];
         this.levelObjects.forEach(obj => {
@@ -386,6 +389,7 @@ export class Game {
             this.interactables.push(exitGroup);
         }
         if (level.id === 'airlock') dressAirlock(this);
+        else dressLaterAct(this, level);
     }
 
     _makeObject(o) {
@@ -397,6 +401,11 @@ export class Game {
             label: o.label,
             fragment: o.fragment
         };
+
+        if (o.type === 'toy') {
+            group.add(makeModel('memory-bear'));
+            return group;
+        }
 
         if (o.type === 'radio' && this.levelIndex === 0) {
             group.add(makeModel('radio'));
@@ -642,6 +651,7 @@ export class Game {
                 return;
             }
         }
+        this.mirror?.update(dt);
         this.renderer.render(this.scene, this.camera);
     }
 }

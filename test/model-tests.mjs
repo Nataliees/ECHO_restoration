@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
-for (const name of ['recovery-bed','archive-desk','service-console','radio','task-lamp']) {
+for (const name of ['recovery-bed','archive-desk','service-console','radio','task-lamp','archive-rack','lab-terminal','restoration-pod','memory-bear']) {
     const file = fs.readFileSync(new URL(`../assets/models/${name}.glb`, import.meta.url));
     assert.equal(file.readUInt32LE(0), 0x46546c67, `${name}: GLB header`);
     assert.equal(file.readUInt32LE(4), 2);
@@ -23,4 +23,4 @@ for (const name of ['recovery-bed','archive-desk','service-console','radio','tas
     }
     for (const view of gltf.bufferViews) assert.ok(view.byteOffset + view.byteLength <= gltf.buffers[0].byteLength);
 }
-console.log('PASS: five self-contained GLB props, valid geometry buffers and merged materials');
+console.log('PASS: nine self-contained GLB props, valid geometry buffers and merged materials');

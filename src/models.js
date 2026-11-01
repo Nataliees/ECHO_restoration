@@ -1,7 +1,7 @@
 import { GLTFLoader } from '../assets/vendor/GLTFLoader.js';
 
 const templates = new Map();
-export const modelNames = ['recovery-bed', 'archive-desk', 'service-console', 'radio', 'task-lamp'];
+export const modelNames = ['recovery-bed', 'archive-desk', 'service-console', 'radio', 'task-lamp', 'archive-rack', 'lab-terminal', 'restoration-pod', 'memory-bear'];
 
 export async function preloadModels() {
     const loader = new GLTFLoader();
