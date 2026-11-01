@@ -38,3 +38,10 @@ MIT license. See `assets/vendor/THREE-LICENSE.txt`.
 Other furniture, the toy, ECHO badges, procedural material textures and game
 code were created for this project. No Mixamo Soldier or other Mixamo asset
 is included.
+
+## Jura interface typeface
+
+Jura by the Jura Project authors, distributed under the SIL Open Font License
+1.1. Source: https://github.com/google/fonts/tree/main/ofl/jura
+Local font and license: `assets/fonts/Jura.ttf`, `assets/fonts/Jura-OFL.txt`.
+The decorative menu frame is an original SVG created for ECHO.
