@@ -1,3 +1,4 @@
+import { dressAirlock } from './atmosphere.js';
 import * as THREE from 'three';
 import { buildAirlock } from './scenery.js';
 import { Player } from './player.js';
@@ -62,6 +63,10 @@ export class Game {
         );
 
         this.renderer = new THREE.WebGLRenderer({ antialias: true });
+        this.renderer.shadowMap.enabled = true;
+        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        this.renderer.toneMappingExposure = 1.15;
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         container.appendChild(this.renderer.domElement);
@@ -225,9 +230,13 @@ export class Game {
             if (obj.parent) obj.parent.remove(obj);
             obj.traverse(node => {
                 node.geometry?.dispose();
+                node.shadow?.dispose();
                 if (node.material) {
                     const materials = Array.isArray(node.material) ? node.material : [node.material];
-                    materials.forEach(mat => { mat.map?.dispose(); mat.dispose(); });
+                    materials.forEach(mat => {
+                        new Set([mat.map, mat.bumpMap, mat.roughnessMap, mat.emissiveMap]).forEach(t => t?.dispose());
+                        mat.dispose();
+                    });
                 }
             });
         });
@@ -235,6 +244,7 @@ export class Game {
         if (this.floor) {
             this.scene.remove(this.floor);
             this.floor.geometry.dispose();
+            new Set([this.floor.material.map, this.floor.material.bumpMap]).forEach(t => t?.dispose());
             this.floor.material.dispose();
             this.floor = null;
         }
@@ -286,11 +296,15 @@ export class Game {
         this.floor.receiveShadow = false;
         this.scene.add(this.floor);
 
-        this.ambient.intensity = level.id === 'airlock' ? 1.4 : 0.6;
+        this.ambient.color.set(level.id === 'airlock' ? 0x879f9b : 0x334455);
+        this.ambient.intensity = level.id === 'airlock' ? .55 : .6;
+        this.renderer.toneMapping = level.id === 'airlock' ? THREE.ACESFilmicToneMapping : THREE.NoToneMapping;
+        this.scene.fog.color.set(level.id === 'airlock' ? 0x192623 : 0x05070a);
+        this.scene.fog.density = level.id === 'airlock' ? .025 : .045;
 
         // Свет уровня
         this.levelLight = new THREE.PointLight(
-            level.lightColor || 0x00aaff, level.id === 'airlock' ? 38 : 1.2, 30
+            level.lightColor || 0x00aaff, level.id === 'airlock' ? 12 : 1.2, 30
         );
         this.levelLight.position.set(0, 4, 0);
         this.scene.add(this.levelLight);
@@ -370,6 +384,7 @@ export class Game {
             this.levelObjects.push(exitGroup);
             this.interactables.push(exitGroup);
         }
+        if (level.id === 'airlock') dressAirlock(this);
     }
 
     _makeObject(o) {
