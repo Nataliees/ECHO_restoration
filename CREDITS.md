@@ -50,3 +50,9 @@ The decorative menu frame is an original SVG created for ECHO.
 
 Remstage Music — In the house in a heartbeat. Audio file supplied by the project
 user, retained unchanged as `assets/background_music.mp3`.
+
+## Typewriter sound
+
+Recording supplied by the project user as `zvuk-pishuschey-mashinki-1.mp3`,
+retained as `assets/typewriter.mp3`. Six aligned keystroke excerpts were
+extracted for per-character playback; see `tools/build-typewriter.py`.

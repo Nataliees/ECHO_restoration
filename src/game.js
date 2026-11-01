@@ -49,10 +49,10 @@ export class Game {
         this.ui = new UI(this);
         this.interactions = new Interactions(this);
         this.player = new Player(this, this.camera, this.renderer.domElement);
+        this._initAudio();
         this.intro = new IntroSequence(this);
         this.prologue = new PrologueSequence(this);
 
-        this._initAudio();
         this.music = new BackgroundMusic(this);
         this.recording = new RecoveredTransmission(this);
         this._bindUI();

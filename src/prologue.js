@@ -1,3 +1,4 @@
+import { TypingSound } from './typing-sound.js';
 export const prologueParagraphs = [
     '2144 год.\nЧеловеческая память больше не считается достоверным свидетельством.',
     'В закрытом исследовательском комплексе группа учёных разрабатывает ECHO — систему восстановления воспоминаний, утраченных после тяжёлых травм.',
@@ -7,7 +8,7 @@ export const prologueParagraphs = [
 
 export class PrologueSequence {
     constructor(game) {
-        this.game=game;this.active=false;
+        this.game=game;this.active=false;this.sound=new TypingSound(game);
         this.screen=document.getElementById('prologue-screen');
         this.screen.setAttribute('aria-label','Предыстория ECHO. '+prologueParagraphs.join(' '));
         this.text=document.getElementById('prologue-text');
@@ -21,13 +22,14 @@ export class PrologueSequence {
         this.screen.classList.add('active');document.body.classList.add('intro-active');
     }
     update(dt){
-        if(!this.active || document.hidden)return;
+        if(!this.active || document.hidden || !this.sound.ready)return;
         this.remaining-=dt;
         while(this.remaining<=0&&this.active){
             const source=prologueParagraphs[this.index];
             if(this.offset<source.length){
                 const letter=source[this.offset++];this.paragraph.textContent=source.slice(0,this.offset);
-                this.remaining+=letter==='\n'?.35:/[.!?]/.test(letter)?.26:/[,—]/.test(letter)?.1:.032;
+                this.sound.strike(letter);
+                this.remaining+=letter==='\n'?.35:/[.!?]/.test(letter)?.26:/[,—]/.test(letter)?.15:.055+((this.offset*7+this.index*3)%5)*.006;
             }else if(this.index<prologueParagraphs.length-1){
                 this.index++;this.offset=0;this.paragraph=document.createElement('p');this.text.appendChild(this.paragraph);this.remaining+=.7;
             }else{
@@ -36,6 +38,6 @@ export class PrologueSequence {
             }
         }
     }
-    stop(){this.active=false;this.reading=false;this.screen?.classList.remove('active');document.body.classList.remove('intro-active');}
+    stop(){this.sound.stop();this.active=false;this.reading=false;this.screen?.classList.remove('active');document.body.classList.remove('intro-active');}
     finish(){if(!this.active)return;this.stop();this.game._startIntroVideo();}
 }

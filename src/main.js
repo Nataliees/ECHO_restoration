@@ -1,3 +1,4 @@
+import { preloadTypingSound } from './typing-sound.js';
 import { Game } from './game.js';
 import { preloadModels } from './models.js';
 
@@ -8,7 +9,7 @@ start.disabled = true;
 document.getElementById('btn-continue').disabled = true;
 start.textContent = 'Загрузка…';
 try {
-    await preloadModels();
+    await Promise.all([preloadModels(),preloadTypingSound()]);
     const game = new Game();
     game.init();
     window.__game = game;
