@@ -104,6 +104,8 @@ export class Game {
         const backMenuBtn = document.getElementById('btn-back-menu');
 
         document.getElementById('btn-return-branch')?.addEventListener('click', () => this.returnToBranch());
+        document.getElementById('btn-endings')?.addEventListener('click', () => {this.ui.updateEndingsCounter();this._showScreen('endings-screen');});
+        document.getElementById('btn-endings-back')?.addEventListener('click', () => this._showScreen('menu-screen'));
         document.getElementById('btn-about')?.addEventListener('click', () => this._showScreen('about-screen'));
         document.getElementById('btn-about-back')?.addEventListener('click', () => this._showScreen('menu-screen'));
         document.getElementById('btn-exit-back')?.addEventListener('click', () => {this.state='menu';this._showScreen('menu-screen');});
@@ -137,7 +139,7 @@ export class Game {
     }
 
     _showScreen(id) {
-        document.body.classList.toggle('menu-view', ['menu-screen','about-screen','exit-screen'].includes(id));
+        document.body.classList.toggle('menu-view', ['menu-screen','about-screen','exit-screen','endings-screen'].includes(id));
         document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
         if (id) {
             const el = document.getElementById(id);

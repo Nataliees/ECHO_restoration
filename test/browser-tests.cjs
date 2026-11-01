@@ -10,6 +10,7 @@ const output=process.env.ECHO_SCREENSHOTS||path.join(require('node:os').tmpdir()
  assert.equal(await page.locator('#btn-continue').isVisible(),false);
  assert.equal(await page.locator('#btn-return-branch').isVisible(),false);
  await page.waitForTimeout(650);await page.screenshot({path:path.join(output,'menu-new.png')});
+ await page.click('#btn-endings');await page.waitForSelector('#endings-screen.active');assert.match(await page.locator('#menu-endings').innerText(),/Пока ни один/);await page.click('#btn-endings-back');
  await page.click('#btn-about');await page.waitForSelector('#about-screen.active');await page.click('#btn-about-back');
  await page.click('#btn-start');await page.waitForFunction(()=>window.__game.state==='play');
  async function focus(id,x,z){
@@ -36,7 +37,7 @@ const output=process.env.ECHO_SCREENSHOTS||path.join(require('node:os').tmpdir()
   await page.click(`[data-ending="${ending}"]`);await page.click('#ending-back');await page.waitForSelector('#menu-screen.active');
  }
  await finish(['accept','restart'],'accept');
- assert.match(await page.locator('#menu-endings').innerText(),/Принять правду/);
+ await page.click('#btn-endings');await page.waitForSelector('#endings-screen.active');assert.match(await page.locator('#menu-endings').innerText(),/Принять правду/);await page.click('#btn-endings-back');
  await page.reload();await page.waitForFunction(()=>window.__game?.state==='menu');await page.click('#btn-return-branch');await page.waitForSelector('#moral-overlay.active');
  assert.equal(await page.evaluate(()=>window.__game.memory.hasFragment('toy_memory')),false,'checkpoint does not retain later toy');
  await page.click('#moral-justify');await page.waitForFunction(()=>window.__game.levelIndex===2&&window.__game.state==='play');await finish(['rewrite','restart'],'rewrite');

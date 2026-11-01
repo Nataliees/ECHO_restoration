@@ -809,3 +809,21 @@ body.menu-view #subtitle-box, body.menu-view #interact-prompt { display:none !im
 #btn-journal, #btn-sound { pointer-events:none; }
 #moral-overlay .menu-btn { display:block; width:100%; margin-top:12px; }
 @media(max-height:650px) { #menu-screen { justify-content:flex-start; padding-top:22px; } #menu-screen .echo-logo { font-size:60px; } .main-menu-actions { margin-top:10px; gap:6px; } .main-menu-actions .menu-btn { padding:10px; } }
+
+.menu-text-btn {
+    margin: 12px 0 0;
+    padding: 6px 12px;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    color: #9ebfc1;
+    font: 13px 'Segoe UI', sans-serif;
+    letter-spacing: .06em;
+    cursor: pointer;
+}
+.menu-text-btn:hover { background: transparent; color: #e3f3ef; text-decoration: underline; box-shadow: none; }
+.menu-text-btn:focus-visible { outline: 1px solid #a5dbd4; outline-offset: 4px; }
+#endings-screen { gap: 22px; }
+#endings-screen h2 { margin: 0; }
+#endings-screen .menu-ending-list { margin: 0; text-align: center; color: #c8ddd7; font-size: 17px; line-height: 2.2; }
+.endings-empty { color: #9eb9b4; text-align: center; padding: 0 20px; }

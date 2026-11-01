@@ -183,7 +183,7 @@ export class UI {
         if (this.counterEl) this.counterEl.textContent = `ФИНАЛЫ ${count}/3`;
         if (this.menuEndingsEl) {
             this.menuEndingsEl.replaceChildren();
-            const title=document.createElement('div');title.textContent=`Открытые финалы · ${count} / 3`;this.menuEndingsEl.appendChild(title);
+            if(!count){const empty=document.createElement('p');empty.className='endings-empty';empty.textContent='Пока ни один финал не открыт.';this.menuEndingsEl.appendChild(empty);}
             const list=document.createElement('ul');list.className='menu-ending-list';
             for(const id of this.game.unlockedEndings){if(!endings[id])continue;const li=document.createElement('li');li.textContent=endings[id].title;list.appendChild(li);}
             this.menuEndingsEl.appendChild(list);
