@@ -1,0 +1,8 @@
+{
+  "name": "echo-three-acts",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node test/story-tests.mjs && node test/interaction-tests.mjs && node test/markup-tests.mjs"
+  }
+}

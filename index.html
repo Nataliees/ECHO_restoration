@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>ECHO — RESTORATION INITIATED</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+    <div id="game-container"></div>
+
+    <div id="intro-interface" role="region" aria-label="Вступительная кат-сцена">
+        <div id="intro-title" aria-live="polite">ECHO<small>RESTORATION INITIATED</small></div>
+        <div id="intro-caption" aria-live="polite"></div>
+        <button id="intro-skip" type="button">Пропустить</button>
+    </div>
+
+    <div id="crosshair"></div>
+    <div id="subtitle-box"></div>
+    <div id="interact-prompt"></div>
+    <div id="memory-journal" aria-label="Три фрагмента памяти"></div>
+    <div id="act-hud">
+        <div class="hud-eyebrow" id="act-label">АКТ 01 / 03</div>
+        <div class="hud-heading" id="act-heading">ШЛЮЗ</div>
+        <div class="hud-objective" id="act-objective"></div>
+        <div class="hud-progress" id="act-progress"></div>
+    </div>
+    <div id="endings-counter"></div>
+
+    <button id="btn-journal" class="hud-btn">Журнал (J)</button>
+    <button id="btn-sound" class="hud-btn">Звук: вкл</button>
+
+    <div id="mobile-controls">
+        <div id="joystick-zone">
+            <div id="joystick-knob"></div>
+        </div>
+        <button id="btn-interact">E</button>
+    </div>
+
+    <div id="menu-screen" class="screen active">
+        <div class="menu-serial">PERSONAL RESTORATION SYSTEM / 001</div>
+        <h1 class="echo-logo">ECHO</h1>
+        <p class="echo-tagline">RESTORATION INITIATED</p>
+        <p class="subtitle">Память можно изменить. Прошлое — нет.</p>
+        <p class="menu-intro">Три фрагмента. Одно решение. Никакой гарантии, что ты захочешь вспомнить всё.</p>
+        <button id="btn-start" class="menu-btn">Начать</button>
+        <button id="btn-continue" class="menu-btn">Продолжить</button>
+        <div id="menu-endings" class="endings-counter"></div>
+        <div class="menu-version">BUILD · THREE ACTS / ECHO PROTOCOL</div>
+    </div>
+
+    <div id="pause-screen" class="screen">
+        <h1>ПАУЗА</h1>
+        <button id="btn-resume" class="menu-btn">Продолжить</button>
+        <button id="btn-restart" class="menu-btn">Начать заново</button>
+        <button id="btn-back-menu" class="menu-btn">В главное меню</button>
+    </div>
+
+    <div id="note-overlay" class="overlay">
+        <div class="note-content">
+            <div class="panel-kicker" id="note-author">НАЙДЕННЫЙ ДОКУМЕНТ</div>
+            <h2 id="note-title">ЗАПИСЬ</h2>
+            <div id="note-text" class="note-text"></div>
+            <button id="note-close" class="menu-btn">Закрыть (E)</button>
+        </div>
+    </div>
+
+    <div id="recording-overlay" class="overlay" aria-label="Восстановленная передача">
+        <div class="recording-content">
+            <div class="panel-kicker">RECOVERED AUDIO / PERSONAL CHANNEL</div>
+            <h2>ПОСЛЕДНЯЯ ПЕРЕДАЧА</h2>
+            <div class="radio-waveform" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            <p id="recording-status">ПОИСК СИГНАЛА</p>
+            <p id="recording-transcript"></p>
+            <button id="recording-close" class="menu-btn">Закрыть / Пропустить</button>
+        </div>
+    </div>
+
+    <div id="ending-overlay" class="overlay">
+        <div class="ending-content">
+            <div class="panel-kicker">ECHO / FINAL RESTORATION PROTOCOL</div>
+            <div id="ending-choice"></div>
+            <div id="ending-visual" class="ending-visual"></div>
+            <h2 id="ending-title"></h2>
+            <div id="ending-status"></div>
+            <div id="ending-text" class="ending-text"></div>
+            <button id="ending-back" class="menu-btn">В главное меню</button>
+        </div>
+    </div>
+
+    <div id="journal-overlay" class="overlay">
+        <div class="journal-content">
+            <div class="panel-kicker">ECHO / RESTORED ARCHIVE</div>
+            <h2>АРХИВ ПАМЯТИ</h2>
+            <div id="journal-summary"></div>
+            <ul id="journal-list" class="journal-list"></ul>
+            <h3 class="journal-section-title">ПРОСМОТРЕННЫЕ ДОКУМЕНТЫ</h3>
+            <ul id="journal-notes" class="journal-list"></ul>
+            <button id="journal-close" class="menu-btn">Закрыть (J)</button>
+        </div>
+    </div>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "./assets/vendor/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+    <script type="module" src="./src/main.js"></script>
+</body>
+</html>
