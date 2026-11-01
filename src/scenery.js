@@ -1,3 +1,4 @@
+import { makeModel } from './models.js';
 import * as THREE from 'three';
 
 // The first act has three readable zones; scenery carries no new plot facts.
@@ -30,20 +31,16 @@ export function buildAirlock(game) {
         mesh.position.set(...pos); group.add(mesh);
         return mesh;
     }
-    // Recovery couch sits to one side of the spawn, leaving a clear central path.
-    box([-3.45, .4, 1.7], [1.5, .65, 2.5], 0x253d49, true);
-    box([-3.45, .77, 1.65], [1.25, .12, 2.2], 0x70888c);
-    box([-3.45, .9, 2.5], [1.1, .18, .45], 0x9aafb0);
-    box([-4.55, 1.65, 1.7], [.15, 1.1, 1], 0x10252e);
+    // Mesh assets replace the old cuboid furniture. Collision footprints stay stable.
+    group.add(makeModel('recovery-bed', [-3.45, 0, 1.7]));
+    group.add(makeModel('archive-desk', [-2.85, 0, -3.9]));
+    group.add(makeModel('service-console', [2.8, 0, -4.25]));
+    group.add(makeModel('task-lamp', [-3.55, 1.02, -3.85]));
+    for (const [x, z, w, d] of [[-3.45,1.7,1.5,2.5],[-2.85,-3.9,2.2,1.25],[2.8,-4.25,2.1,.9]]) {
+        game.colliders.push({min:new THREE.Vector3(x-w/2,0,z-d/2), max:new THREE.Vector3(x+w/2,1,z+d/2)});
+    }
     sign('ECHO / ВОССТАНОВЛЕНИЕ', [-3.3, 2.65, 2.9], 2.5).rotation.y = Math.PI;
-    // Archive station: a desk, wall backing, and the actual collectible above it.
-    box([-2.85, .95, -3.9], [2.2, .12, 1.25], 0x3e555c, true);
-    for (const x of [-3.8, -1.9]) box([x, .46, -4], [.1, .92, 1], 0x23343f);
-    box([-2.8, 1.7, -4.68], [1.7, 1.6, .12], 0x111f28);
     sign('01 / ЛИЧНЫЙ АРХИВ', [-2.8, 2.8, -4.6], 2.7);
-    // Communications station: receiver stays reachable from the front.
-    box([2.8, .5, -4.25], [2.1, 1, .9], 0x253c46, true);
-    box([2.8, 1.03, -4.25], [2.2, .08, 1], 0x607b80);
     sign('02 / ПЕРСОНАЛЬНАЯ СВЯЗЬ', [2.8, 2.8, -4.6], 3);
     sign('КАНАЛ ПОВРЕЖДЁН', [2.6, 1.95, -4.6], 1.9, '#efb18b');
     // Structural ribs, conduits, and floor guidance give scale without blocking clues.

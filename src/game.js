@@ -1,3 +1,4 @@
+import { makeModel } from './models.js';
 import { dressAirlock } from './atmosphere.js';
 import * as THREE from 'three';
 import { buildAirlock } from './scenery.js';
@@ -396,6 +397,11 @@ export class Game {
             label: o.label,
             fragment: o.fragment
         };
+
+        if (o.type === 'radio' && this.levelIndex === 0) {
+            group.add(makeModel('radio'));
+            return group;
+        }
 
         let mesh;
         switch (o.type) {

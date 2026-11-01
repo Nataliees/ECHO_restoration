@@ -66,8 +66,6 @@ export function dressAirlock(game) {
     const metal = new THREE.MeshStandardMaterial({color: 0x4a514c, roughness: .6, metalness: .65, map: wallMap});
     const dark = new THREE.MeshStandardMaterial({color: 0x242e2c, roughness: .78, metalness: .35});
     const brass = new THREE.MeshStandardMaterial({color: 0x887450, roughness: .45, metalness: .7});
-    const paper = new THREE.MeshStandardMaterial({color: 0xc9b991, roughness: .95});
-    const glass = new THREE.MeshStandardMaterial({color: 0x628f91, roughness: .23, metalness: .45});
     function mesh(geometry, material, pos) {
         const object = new THREE.Mesh(geometry, material);
         object.position.set(...pos); object.castShadow = object.receiveShadow = true;
@@ -88,31 +86,6 @@ export function dressAirlock(game) {
             for (let i = 0; i < 7; i++) box([x > 0 ? x - .1 : x + .1, 1.17 + i * .13, z], [.05, .045, 1.3]);
         }
     }
-    // Archive drawer bank, paper stack and task lamp.
-    box([-2.8, .48, -4], [1.4, .82, .9], dark);
-    for (const y of [.22, .48, .74]) {
-        box([-2.8, y, -3.52], [1.32, .23, .06]);
-        box([-2.8, y, -3.47], [.3, .035, .035], brass);
-    }
-    for (let i = 0; i < 4; i++) box([-2.05 + i * .012, 1.03 + i * .012, -3.7], [.4, .008, .28], paper).rotation.y = .15;
-    cylinder([-3.55, 1.05, -3.85], .14, .06, dark);
-    cylinder([-3.55, 1.38, -3.85], .025, .65);
-    mesh(new THREE.ConeGeometry(.22, .2, 20, 1, true), brass, [-3.55, 1.78, -3.85]);
-    const warmBulb = new THREE.MeshBasicMaterial({color: 0xffd79e});
-    mesh(new THREE.SphereGeometry(.065, 12, 8), warmBulb, [-3.55, 1.72, -3.85]);
-    // Radio details: antenna, speaker grille and rack controls.
-    cylinder([2.24, 1.95, -4.16], .012, .75, dark);
-    for (let i = 0; i < 5; i++) box([2.35 + i * .09, 1.12, -3.98], [.045, .09, .018], dark);
-    for (const x of [2.05, 3.55]) {
-        box([x, .57, -3.76], [.22, .7, .05], dark);
-        for (let i = 0; i < 4; i++) mesh(new THREE.SphereGeometry(.025, 8, 6), brass, [x, .36 + i * .13, -3.71]);
-    }
-    // Bed rails and a real monitor face.
-    for (const x of [-4.15, -2.75]) {
-        cylinder([x, 1, 1.6], .025, 1.9).rotation.x = Math.PI / 2;
-        for (const z of [.75, 2.45]) cylinder([x, .85, z], .025, .35);
-    }
-    box([-4.44, 1.65, 1.7], [.03, .7, .7], glass);
     // Warm local lamp against cool overhead fill, inspired by the reference.
     const lamp = new THREE.SpotLight(0xffc88a, 24, 8, Math.PI / 2.8, .65, 2);
     lamp.position.set(-3.55, 1.69, -3.85);
