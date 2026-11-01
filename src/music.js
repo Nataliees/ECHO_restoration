@@ -22,7 +22,7 @@ export class BackgroundMusic {
         this.audio.muted=!this.game.soundEnabled;
         if(!this.allowed()){this.pause();return;}
         this.play();
-        const target=this.game.state==='memory'?.012:.045;
+        const target=this.game.state==='memory'?.035:.14;
         this.level+=(target-this.level)*(1-Math.exp(-dt*1.2));
         if(this.gain)this.gain.gain.value=this.level;else this.audio.volume=this.level;
     }

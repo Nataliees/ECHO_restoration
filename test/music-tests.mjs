@@ -8,8 +8,8 @@ const game={introSeen:false,state:'prologue',soundEnabled:true,audioCtx:null};
 const music=new BackgroundMusic(game);
 for(const state of ['menu','prologue','intro']){game.state=state;music.update(10);assert.equal(music.audio.paused,true,`silent during ${state}`);}
 game.introSeen=true;game.state='play';music.update(10);await Promise.resolve();await Promise.resolve();
-assert.equal(music.audio.paused,false);assert.ok(music.audio.volume>.044&&music.audio.volume<=.045);assert.equal(music.audio.loop,true);
-game.state='memory';music.update(10);assert.ok(music.audio.volume<.013,'duck under the recovered voice');
+assert.equal(music.audio.paused,false);assert.ok(music.audio.volume>.139&&music.audio.volume<=.14);assert.equal(music.audio.loop,true);
+game.state='memory';music.update(10);assert.ok(music.audio.volume<.036,'duck under the recovered voice');
 game.soundEnabled=false;music.update(1);assert.ok(music.audio.paused&&music.audio.muted);
 game.soundEnabled=true;game.state='play';music.update(1);await Promise.resolve();await Promise.resolve();
 document.hidden=true;listeners.get('visibilitychange')();assert.equal(music.audio.paused,true,'pause without relying on a hidden-tab RAF');
