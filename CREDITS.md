@@ -45,3 +45,9 @@ Jura by the Jura Project authors, distributed under the SIL Open Font License
 1.1. Source: https://github.com/google/fonts/tree/main/ofl/jura
 Local font and license: `assets/fonts/Jura.ttf`, `assets/fonts/Jura-OFL.txt`.
 The decorative menu frame is an original SVG created for ECHO.
+
+## PT Mono prologue typeface
+
+PT Mono by ParaType, SIL Open Font License 1.1.
+Source: https://github.com/google/fonts/tree/main/ofl/ptmono
+Local files: `assets/fonts/PTMono-Regular.ttf`, `assets/fonts/PTMono-OFL.txt`.

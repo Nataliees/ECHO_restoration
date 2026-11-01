@@ -937,3 +937,7 @@ body.menu-view #subtitle-box, body.menu-view #interact-prompt { display:none !im
 @keyframes prologue-cursor { 0%,49% { opacity:1; } 50%,100% { opacity:0; } }
 @media(max-height:620px) { #prologue-screen { justify-content:flex-start; padding:25px; gap:20px; } .prologue-copy { font-size:13px; line-height:1.65; } }
 @media(prefers-reduced-motion:reduce) { #prologue-text p:last-child::after { animation:none; } }
+
+@font-face { font-family:'ECHO Typewriter'; src:url('assets/fonts/PTMono-Regular.ttf') format('truetype'); font-weight:400; font-style:normal; font-display:swap; }
+.prologue-copy, #prologue-skip { font-family:'ECHO Typewriter',monospace; }
+.prologue-copy { letter-spacing:.025em; color:#d1d0c5; }
