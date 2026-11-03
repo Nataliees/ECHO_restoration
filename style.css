@@ -986,3 +986,5 @@ body.menu-view #subtitle-box, body.menu-view #interact-prompt { display:none !im
     opacity:1;
     transform:translateX(-50%) translateY(0);
 }
+
+#ending-cinematic-caption { position:absolute; left:50%; bottom:max(80px,12vh); transform:translateX(-50%); margin:0; padding:8px 18px; max-width:90%; width:max-content; color:#f0f3ed; background:#000b; text-align:center; font:clamp(17px,2vw,24px)/1.5 'ECHO Interface',sans-serif; text-shadow:0 2px 5px #000; }

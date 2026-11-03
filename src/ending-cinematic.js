@@ -12,6 +12,7 @@ export class EndingCinematic {
         this.overlay = document.getElementById('ending-cinematic');
         this.video = document.getElementById('ending-video');
         this.playButton = document.getElementById('ending-play');
+        this.caption = document.getElementById('ending-cinematic-caption');
         this.video.addEventListener('ended', () => this.finish());
         this.video.addEventListener('error', () => {
             if (!this.active) return;
@@ -43,6 +44,7 @@ export class EndingCinematic {
         this.stop();
         this.active = true;
         this.onComplete = onComplete;
+        this.endingId = ending.id;
         this.overlay.hidden = false;
         document.body.classList.add('ending-cinematic-active');
         this.overlay.setAttribute('aria-label', `Кат-сцена: ${ending.title}`);
@@ -63,6 +65,9 @@ export class EndingCinematic {
 
     update() {
         this.video.muted = !this.game.soundEnabled;
+        // Follow the media clock, including seeks, pauses, and skipped playback.
+        const time = this.video.currentTime;
+        this.caption.hidden = !(this.active && this.endingId === 'accept' && time >= 6 && time < 7.45);
     }
 
     finish() {
@@ -76,6 +81,8 @@ export class EndingCinematic {
         this.active = false;
         this.session++;
         this.onComplete = null;
+        this.endingId = null;
+        this.caption.hidden = true;
         this.resumeOnVisible = false;
         this.video.pause();
         if (this.video.hasAttribute('src')) {
