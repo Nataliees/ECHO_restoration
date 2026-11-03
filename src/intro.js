@@ -395,6 +395,9 @@ export class IntroSequence {
         if (t >= 8.90) {
             if (!this.shatterStarted) {
                 this.shatterStarted = true;
+                // Reveal ECHO on the same frame the glass starts breaking apart.
+                if (this.title) this.title.classList.add('visible');
+                if (this.caption) this.caption.textContent = '';
                 this.crackMaterial.opacity=0;
                 this.shatterGroup.visible = true;
                 this.shatterPieces.forEach(piece => {
@@ -413,12 +416,8 @@ export class IntroSequence {
             });
         }
 
-        // Keep the background black after the fragments fade, then reveal ECHO.
+        // Keep the title backdrop black after the fragments fade.
         if (t >= 10.17) this.black.material.opacity = Math.min(1, (t - 10.17) / 0.24);
-        if (t >= 10.47) {
-            if (this.title) this.title.classList.add('visible');
-            if (this.caption) this.caption.textContent = '';
-        }
         if (t >= 11.7) this.finish();
     }
 
