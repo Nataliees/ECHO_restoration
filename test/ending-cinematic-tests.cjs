@@ -31,6 +31,23 @@ const assert = require('node:assert/strict');
             await page.click(`.ending-option[data-ending="${endingId}"]`);
         }
 
+        async function checkEndingMusic() {
+            await page.waitForFunction(() => {
+                const c = window.__game.ui.endingCinematic;
+                return !c.video.paused && !c.music.paused && !c.music.seeking &&
+                    Math.abs(c.music.currentTime - 16 - c.video.currentTime) < 0.3;
+            });
+            const music = await page.evaluate(() => {
+                const c = window.__game.ui.endingCinematic;
+                return { src: c.musicAssetUrl, seekableBlob: c.music.currentSrc.startsWith('blob:'), gain: c.musicGain.gain.value,
+                    menuPaused: window.__game.menuMusic.audio.paused };
+            });
+            assert.ok(music.src.endsWith('/assets/menu_music.mp3'));
+            assert.equal(music.seekableBlob, true, 'MP3 seeks work without HTTP Range support');
+            assert.ok(Math.abs(music.gain - 0.14) < 0.00001);
+            assert.equal(music.menuPaused, true);
+        }
+
         await chooseEnding();
         await page.waitForFunction(() => {
             const video = document.getElementById('ending-video');
@@ -43,11 +60,24 @@ const assert = require('node:assert/strict');
         assert.equal(saved.completedEnding, 'accept');
         assert.ok(saved.endings.includes('accept'), 'ending saved before the cinematic ends');
         assert.ok(Math.abs(await page.locator('#ending-video').evaluate(video => video.duration) - 10) < 0.05);
+        await checkEndingMusic();
+        await page.locator('#ending-video').evaluate(video => { video.currentTime = 1.25; });
+        await checkEndingMusic();
+        await page.keyboard.press('Escape');
+        await page.waitForFunction(() => window.__game.state === 'paused' && window.__game.ui.endingCinematic.music.paused);
+        const songPausedAt = await page.evaluate(() => window.__game.ui.endingCinematic.music.currentTime);
+        await page.waitForTimeout(200);
+        assert.equal(await page.evaluate(() => window.__game.ui.endingCinematic.music.currentTime), songPausedAt);
+        await page.keyboard.press('KeyE');
+        await checkEndingMusic();
 
         await page.evaluate(() => window.__game.toggleSound());
         await page.waitForFunction(() => document.getElementById('ending-video').muted);
+        assert.equal(await page.evaluate(() => window.__game.ui.endingCinematic.music.muted), true);
+        assert.equal(await page.evaluate(() => window.__game.ui.endingCinematic.music.paused), true);
         await page.evaluate(() => window.__game.toggleSound());
         await page.waitForFunction(() => !document.getElementById('ending-video').muted);
+        await checkEndingMusic();
 
         const pausedAt = await page.evaluate(() => {
             Object.defineProperty(document, 'hidden', { configurable: true, value: true });
@@ -56,12 +86,14 @@ const assert = require('node:assert/strict');
         });
         await page.waitForTimeout(250);
         assert.equal(await page.locator('#ending-video').evaluate(video => video.paused), true);
+        assert.equal(await page.evaluate(() => window.__game.ui.endingCinematic.music.paused), true);
         assert.ok(Math.abs(await page.locator('#ending-video').evaluate(video => video.currentTime) - pausedAt) < 0.05);
         await page.evaluate(() => {
             delete document.hidden;
             document.dispatchEvent(new Event('visibilitychange'));
         });
         await page.waitForFunction(() => !document.getElementById('ending-video').paused);
+        await checkEndingMusic();
         await page.waitForFunction(() => document.getElementById('ending-video').currentTime >= 6.2);
         assert.ok(await page.locator('#ending-video').evaluate(video => video.webkitAudioDecodedByteCount > 0));
         await page.waitForSelector('#ending-cinematic-caption', { state: 'visible' });
@@ -72,6 +104,7 @@ const assert = require('node:assert/strict');
         await page.waitForSelector('#ending-overlay.active');
         assert.equal(await page.locator('#ending-visual img').getAttribute('alt'), 'Принять правду');
         assert.equal(await page.locator('#ending-video').evaluate(video => video.paused), true);
+        assert.equal(await page.evaluate(() => window.__game.ui.endingCinematic.music.paused), true);
         await page.click('#ending-back');
 
         // Rejected autoplay exposes a real user gesture to resume playback.
@@ -86,11 +119,14 @@ const assert = require('node:assert/strict');
         });
         await chooseEnding();
         await page.waitForSelector('#ending-play', { state: 'visible' });
+        assert.equal(await page.evaluate(() => window.__game.ui.endingCinematic.music.paused), true);
         await page.click('#ending-play');
         await page.waitForFunction(() => !document.getElementById('ending-video').paused);
+        await checkEndingMusic();
         await page.click('#ending-skip');
         await page.waitForSelector('#ending-overlay.active');
         assert.equal(await page.locator('#ending-video').evaluate(video => video.hasAttribute('src')), false);
+        assert.equal(await page.evaluate(() => window.__game.ui.endingCinematic.music.paused), true);
         await page.click('#ending-back');
 
         // A missing video must still let the player read the earned ending.
@@ -113,6 +149,7 @@ const assert = require('node:assert/strict');
             label: video.getAttribute('aria-label')
         }));
         assert.ok(rewrite.src.endsWith('/assets/ending_rewrite.mp4'));
+        await checkEndingMusic();
         assert.ok(Math.abs(rewrite.duration - 5.208333) < 0.1);
         assert.ok(rewrite.audio > 0);
         assert.equal(rewrite.label, 'Стереть');
@@ -151,6 +188,7 @@ const assert = require('node:assert/strict');
             label: video.getAttribute('aria-label')
         }));
         assert.ok(restart.src.endsWith('/assets/ending_restart.mp4'));
+        await checkEndingMusic();
         assert.ok(Math.abs(restart.duration - 6.083333) < 0.1);
         assert.ok(restart.audio > 0);
         assert.equal(restart.label, 'Создать новую личность');
@@ -173,7 +211,7 @@ const assert = require('node:assert/strict');
         await page.click('#ending-back');
         await page.waitForSelector('#menu-screen.active');
         assert.deepEqual(errors, []);
-        console.log('PASS: all three ending videos and soundtracks, both moral branches, mute, hidden-tab pause, natural finish, skip, autoplay recovery, missing-video fallback and saved endings');
+        console.log('PASS: all three ending videos, menu song from 0:16 at gain 0.14, video-clock sync, pause/resume, both moral branches, mute, hidden-tab pause, natural finish, skip, autoplay recovery, missing-video fallback and saved endings');
     } finally {
         await browser.close();
     }

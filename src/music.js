@@ -1,5 +1,6 @@
 // User-supplied background track. Never plays over the prologue or cinematic.
 const GAME_STATES=new Set(['play','dialog','journal','memory','choice','ending']);
+export const BACKGROUND_MUSIC_VOLUME = .14;
 export class BackgroundMusic {
     constructor(game, options={}){
         this.game=game;this.isMenu=!!options.menu;
@@ -26,7 +27,7 @@ export class BackgroundMusic {
         if(!this.allowed()){this.pause();return;}
         this.play();
         // Menu and normal gameplay use the same unobtrusive level.
-        const target=this.game.state==='memory'?.035:.14;
+        const target=this.game.state==='memory'?.035:BACKGROUND_MUSIC_VOLUME;
         this.level+=(target-this.level)*(1-Math.exp(-dt*1.2));
         if(this.gain)this.gain.gain.value=this.level;else this.audio.volume=this.level;
     }
