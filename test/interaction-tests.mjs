@@ -2,7 +2,6 @@
 // This exercises actual Interactions/Memory/Story logic with minimal UI stubs.
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {pathToFileURL} from 'node:url';
 import {Memory} from '../src/memory.js';
 import {levels} from '../src/levels.js';
 import {endings} from '../src/story.js';
@@ -10,9 +9,7 @@ import {endings} from '../src/story.js';
 const source = fs.readFileSync(new URL('../src/interactions.js',import.meta.url),'utf8')
     .replace("import * as THREE from 'three';", "const THREE = {Raycaster:class{constructor(){this.far=0;}},Vector2:class{constructor(x,y){this.x=x;this.y=y;}}};")
     .replace("from './story.js'", `from '${new URL('../src/story.js', import.meta.url).href}'`);
-const stubUrl = new URL('./_interaction-test-stub.mjs', import.meta.url);
-fs.writeFileSync(stubUrl, source, 'utf8');
-const {Interactions} = await import(stubUrl.href);
+const {Interactions} = await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`);
 
 globalThis.document = {pointerLockElement:null,exitPointerLock(){}};
 const notifications=[];

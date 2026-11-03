@@ -8,5 +8,5 @@ Dimensions are metres. +Y is up; fronts face +Z. The radio and teddy bear are ce
 interaction anchors; furniture origins are at floor level. The lamp origin is
 its base. Meshes are merged by material and contain no external dependencies.
 
-Runtime loading uses Three.js r160 GLTFLoader, BufferGeometryUtils and Reflector.
+Runtime loading uses Three.js r160 GLTFLoader and BufferGeometryUtils.
 The Three.js MIT license is in `../vendor/THREE-LICENSE.txt`.

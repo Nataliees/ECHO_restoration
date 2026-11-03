@@ -327,8 +327,6 @@ export class Game {
 
     /* ================= Уровни ================= */
     _clearLevel() {
-        this.mirror?.dispose();
-        this.mirror = null;
         this.colliders = [];
         this.interactables = [];
         this.levelObjects.forEach(obj => {
@@ -759,7 +757,6 @@ export class Game {
                 return;
             }
         }
-        this.mirror?.update(dt);
         this.renderer.render(this.scene, this.camera);
     }
 }

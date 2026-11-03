@@ -108,7 +108,7 @@ export function dressLaterAct(game, level) {
         spot([0,4.45,-1],[0,.8,-3.5],0xd6e0d5,95,true);
         spot([-3.1,3.8,2],[-3.4,.6,.5],0x8db5bb,55);
         spot([2.2,3,-1.6],[2.2,.4,-1.6],0xffcf96,20);
-        // Frontal fill is important: the engineer's face must read in the mirror.
+        // Warm fill lights the area in front of the matte mirror.
         spot([0,2.8,-4.05],[0,1.4,0],0xffe0b6,19);
         const mirror=game.interactables.find(o=>o.userData.type==='mirror');
         const placeholder=mirror.children[0];mirror.remove(placeholder);placeholder.geometry.dispose();placeholder.material.dispose();
