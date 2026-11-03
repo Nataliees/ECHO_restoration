@@ -44,7 +44,7 @@ const assert = require('node:assert/strict');
             });
             assert.ok(music.src.endsWith('/assets/menu_music.mp3'));
             assert.equal(music.seekableBlob, true, 'MP3 seeks work without HTTP Range support');
-            assert.ok(Math.abs(music.gain - 0.14) < 0.00001);
+            assert.ok(Math.abs(music.gain - 0.14 / 1.5) < 0.00001);
             assert.equal(music.menuPaused, true);
         }
 
@@ -211,7 +211,7 @@ const assert = require('node:assert/strict');
         await page.click('#ending-back');
         await page.waitForSelector('#menu-screen.active');
         assert.deepEqual(errors, []);
-        console.log('PASS: all three ending videos, menu song from 0:16 at gain 0.14, video-clock sync, pause/resume, both moral branches, mute, hidden-tab pause, natural finish, skip, autoplay recovery, missing-video fallback and saved endings');
+        console.log('PASS: all three ending videos, menu song from 0:16 at gain 0.14/1.5, video-clock sync, pause/resume, both moral branches, mute, hidden-tab pause, natural finish, skip, autoplay recovery, missing-video fallback and saved endings');
     } finally {
         await browser.close();
     }

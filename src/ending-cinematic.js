@@ -3,6 +3,7 @@ import { BACKGROUND_MUSIC_VOLUME } from './music.js';
 // Original video audio is preserved; the menu song follows the video clock
 // starting at 0:16 of the song in every ending.
 const MUSIC_OFFSET = 16;
+const ENDING_MUSIC_VOLUME = BACKGROUND_MUSIC_VOLUME / 1.5;
 const ENDING_VIDEOS = {
     accept: '../assets/ending_accept.mp4',
     rewrite: '../assets/ending_rewrite.mp4',
@@ -20,7 +21,7 @@ export class EndingCinematic {
         this.musicAssetUrl = new URL('../assets/menu_music.mp3', import.meta.url).href;
         this.music = new Audio();
         this.music.preload = 'auto';
-        this.music.volume = BACKGROUND_MUSIC_VOLUME;
+        this.music.volume = ENDING_MUSIC_VOLUME;
         // A local blob supports exact MP3 seeks even on a basic HTTP server
         // without byte-range requests. Load once while the player is in menus.
         this.musicReady = fetch(this.musicAssetUrl).then(response => {
@@ -83,7 +84,7 @@ export class EndingCinematic {
             try {
                 this.musicSource = this.game.audioCtx.createMediaElementSource(this.music);
                 this.musicGain = this.game.audioCtx.createGain();
-                this.musicGain.gain.value = BACKGROUND_MUSIC_VOLUME;
+                this.musicGain.gain.value = ENDING_MUSIC_VOLUME;
                 this.musicSource.connect(this.musicGain).connect(this.game.audioCtx.destination);
                 this.music.volume = 1;
             } catch { /* Native volume remains a supported fallback. */ }
