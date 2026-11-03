@@ -57,3 +57,8 @@ without changes in `assets/endings/`: `truth-accepted.png` (1.png),
 
 Video and soundtrack supplied by the project user as `Sequence 01_3.mp4`,
 retained unchanged as `assets/ending_restart.mp4` for the New Identity ending.
+
+## Main menu music
+
+WAY — Make A Wish My Star. Audio file supplied by the project user, retained
+unchanged as `assets/menu_music.mp3`.

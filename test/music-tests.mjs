@@ -16,3 +16,13 @@ document.hidden=true;listeners.get('visibilitychange')();assert.equal(music.audi
 document.hidden=false;game.state='menu';music.update(1);assert.equal(music.audio.paused,true);
 music.audio.currentTime=40;music.reset();assert.equal(music.audio.currentTime,0);
 console.log('PASS: music only after intro, quiet gain, voice ducking, loop, mute and background-tab pause');
+const menuMusic=new BackgroundMusic(game,{menu:true,src:'./assets/menu_music.mp3'});
+game.introSeen=false;game.state='menu';game.soundEnabled=true;
+menuMusic.update(30);await Promise.resolve();await Promise.resolve();
+assert.equal(menuMusic.audio.src,'./assets/menu_music.mp3');
+assert.equal(menuMusic.audio.paused,false);
+assert.equal(menuMusic.audio.loop,true);
+assert.ok(Math.abs(menuMusic.audio.volume-.14)<.00001,'menu matches the normal gameplay volume');
+game.state='play';menuMusic.update(1);assert.equal(menuMusic.audio.paused,true);
+game.state='paused';menuMusic.update(1);assert.equal(menuMusic.audio.paused,true);
+console.log('PASS: menu track loops at the same quiet 0.14 level and stops during gameplay/pause');

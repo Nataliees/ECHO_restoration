@@ -43,7 +43,7 @@ export class CreditsRoll {
         this.hint = document.getElementById('credits-hint');
         this.active = false;
         this.version = 0;
-        this.speed = 30;
+        this.speed = 60;
         this.roll.addEventListener('focusin', event => {
             if (!this.active || !event.target.closest('a')) return;
             this.paused = true;

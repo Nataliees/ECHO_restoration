@@ -129,9 +129,10 @@ export class IntroSequence {
         this.camera.top = 1;
         this.camera.bottom = -1;
         this.camera.updateProjectionMatrix();
-        // Fit video to the screen with cinematic crop but no letterboxing.
+        // Contain the complete landscape frame in either device orientation,
+        // matching the finale videos instead of cropping a portrait viewport.
         const imageAspect = 16/9;
-        const width = 2*Math.max(aspect,imageAspect);
+        const width = 2*Math.min(aspect,imageAspect);
         const height = width/imageAspect;
         const overlays = [this.white,this.alarmOverlay,this.black];
         this.videoPlane.scale.set(width/2,height/2,1);

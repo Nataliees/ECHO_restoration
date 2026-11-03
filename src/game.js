@@ -56,6 +56,7 @@ export class Game {
         this.prologue = new PrologueSequence(this);
 
         this.music = new BackgroundMusic(this);
+        this.menuMusic = new BackgroundMusic(this, {menu:true,src:'./assets/menu_music.mp3'});
         this.recording = new RecoveredTransmission(this);
         this.credits = new CreditsRoll();
         this._bindUI();
@@ -121,6 +122,7 @@ export class Game {
             this.credits.start();
         });
         document.getElementById('btn-credits-back').addEventListener('click', () => this._showScreen('about-screen'));
+        document.getElementById('btn-menu-sound').addEventListener('click', () => this.toggleSound());
         if (startBtn) startBtn.addEventListener('click', () => this.startNewGame());
         if (continueBtn) continueBtn.addEventListener('click', () => this.continueGame());
         if (resumeBtn) resumeBtn.addEventListener('click', () => this.resume());
@@ -153,6 +155,7 @@ export class Game {
     }
 
     startNewGame() {
+        this.menuMusic?.pause();
         this.music?.reset();        this.prologue?.stop();
         this.prologueSeen=false;
         this.intro?.stop();
@@ -192,6 +195,7 @@ export class Game {
     }
 
     continueGame() {
+        this.menuMusic?.pause();
         if (!SaveSystem.hasSave() || this.unlockedEndings.size===0) return;
         this.audioCtx?.resume().catch(()=>{});
         const save = SaveSystem.load();
@@ -296,6 +300,7 @@ export class Game {
         this._showScreen('menu-screen');
         this._updateMenuState();
         this._stopWhispers();
+        this.menuMusic?.unlock();
     }
 
     _releasePointerLock() {
@@ -350,6 +355,7 @@ export class Game {
     }
 
     returnToBranch() {
+        this.menuMusic?.pause();
         const cp=this.branchCheckpoint;
         if(!cp || this.unlockedEndings.size===0)return;
         this.intro?.stop();this.finishRecoveredRecording();this.ui.resetForMenu();
@@ -727,6 +733,9 @@ export class Game {
             }
         }
         this.music?.update(0);
+        this.menuMusic?.update(0);
+        document.getElementById('btn-menu-sound').textContent = this.soundEnabled ? 'Звук: вкл' : 'Звук: выкл';
+        document.getElementById('btn-sound').textContent = this.soundEnabled ? 'ЗВУК / ВКЛ' : 'ЗВУК / ВЫКЛ';
         return this.soundEnabled;
     }
 
@@ -777,6 +786,7 @@ export class Game {
         requestAnimationFrame(() => this._animate());
         const dt = Math.min(this.clock.getDelta(), 0.05);
         this.music?.update(dt);
+        this.menuMusic?.update(dt);
         if (this.state === 'paused') return;
 
         if (this.ui?.endingCinematic.active) {
