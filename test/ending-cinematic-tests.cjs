@@ -11,6 +11,13 @@ const assert = require('node:assert/strict');
         const page = await browser.newPage();
         const errors = [];
         page.on('pageerror', error => errors.push(error.message));
+        let staleModules = 0;
+        // Simulate old, still-cacheable core scripts at their original URLs.
+        // The release import map must select fresh URLs throughout the graph.
+        await page.route(url => /\/src\/(main|game|ui|ending-cinematic|music|prologue)\.js$/.test(url.pathname) && !url.searchParams.has('v'), route => {
+            staleModules++;
+            return route.fulfill({ contentType: 'text/javascript', body: 'throw new Error("Stale cached core module was used");' });
+        });
         await page.goto(process.env.ECHO_TEST_URL || 'http://127.0.0.1:8765');
         await page.waitForFunction(() => window.__game?.state === 'menu');
         await page.evaluate(() => {
@@ -47,6 +54,11 @@ const assert = require('node:assert/strict');
             });
             const music = await page.evaluate(() => {
                 const c = window.__game.ui.endingCinematic;
+                if (!c.testAnalyser) {
+                    c.testAnalyser = window.__game.audioCtx.createAnalyser();
+                    c.testAnalyser.fftSize = 2048;
+                    c.musicGain.connect(c.testAnalyser);
+                }
                 return { src: c.musicAssetUrl, seekableBlob: c.music.currentSrc.startsWith('blob:'), gain: c.musicGain.gain.value,
                     menuPaused: window.__game.menuMusic.audio.paused };
             });
@@ -64,6 +76,13 @@ const assert = require('node:assert/strict');
             }, minimumTime);
             const time = await page.evaluate(() => window.__game.ui.endingCinematic.music.currentTime);
             await page.waitForFunction(time => window.__game.ui.endingCinematic.music.currentTime > time + 0.15, time);
+            await page.waitForFunction(() => {
+                const g = window.__game, c = g.ui.endingCinematic;
+                const samples = new Float32Array(c.testAnalyser.fftSize);
+                c.testAnalyser.getFloatTimeDomainData(samples);
+                return g.audioCtx.state === 'running' && samples.some(value => Math.abs(value) > 0.001);
+            });
+            assert.equal(await page.locator('#ending-video').evaluate(video => video.hasAttribute('src')), true, 'retain video resources until leaving the final card');
             assert.equal(await page.evaluate(() => window.__game.music.audio.paused && window.__game.menuMusic.audio.paused), true);
             assert.deepEqual(await page.evaluate(() => window.__cardMusicEvents), [], 'card transition never pauses or seeks the song');
         }
@@ -125,6 +144,9 @@ const assert = require('node:assert/strict');
         assert.equal(await page.locator('#ending-visual img').getAttribute('alt'), 'Принять правду');
         assert.equal(await page.locator('#ending-video').evaluate(video => video.paused), true);
         await checkCardMusic(25.7);
+        await page.evaluate(() => window.__game.audioCtx.suspend());
+        await page.waitForFunction(() => window.__game.audioCtx.state === 'running');
+        await checkCardMusic(25.7);
         await page.evaluate(() => window.__game.toggleSound());
         await page.waitForFunction(() => window.__game.ui.endingCinematic.music.paused);
         await page.evaluate(() => window.__game.toggleSound());
@@ -146,6 +168,7 @@ const assert = require('node:assert/strict');
         await page.click('#ending-back');
         assert.equal(await page.evaluate(() => window.__game.ui.endingCinematic.music.paused), true);
         assert.equal(await page.evaluate(() => window.__game.ui.endingCinematic.cardActive), false);
+        assert.equal(await page.locator('#ending-video').evaluate(video => video.hasAttribute('src')), false);
 
         // Rejected autoplay exposes a real user gesture to resume playback.
         await page.evaluate(() => {
@@ -165,7 +188,7 @@ const assert = require('node:assert/strict');
         await checkEndingMusic();
         await page.click('#ending-skip');
         await page.waitForSelector('#ending-overlay.active');
-        assert.equal(await page.locator('#ending-video').evaluate(video => video.hasAttribute('src')), false);
+        assert.equal(await page.locator('#ending-video').evaluate(video => video.hasAttribute('src')), true);
         await checkCardMusic();
         await page.click('#ending-back');
 
@@ -214,7 +237,7 @@ const assert = require('node:assert/strict');
         await page.waitForFunction(() => window.__game.state === 'ending');
         await page.waitForSelector('#ending-overlay.active');
         assert.equal(await page.locator('#ending-visual img').getAttribute('alt'), 'Стереть');
-        assert.equal(await page.locator('#ending-video').evaluate(video => video.hasAttribute('src')), false);
+        assert.equal(await page.locator('#ending-video').evaluate(video => video.hasAttribute('src')), true);
         await page.click('#ending-back');
         await page.waitForSelector('#menu-screen.active');
         // New Identity is available from either moral branch and has its own
@@ -249,11 +272,12 @@ const assert = require('node:assert/strict');
         await page.click('#ending-skip');
         await page.waitForSelector('#ending-overlay.final-card.active');
         assert.equal(await page.locator('#ending-visual img').getAttribute('src'), './assets/endings/start-again.png');
-        assert.equal(await page.locator('#ending-video').evaluate(video => video.hasAttribute('src')), false);
+        assert.equal(await page.locator('#ending-video').evaluate(video => video.hasAttribute('src')), true);
         await page.click('#ending-back');
         await page.waitForSelector('#menu-screen.active');
         assert.deepEqual(errors, []);
-        console.log('PASS: all three ending videos, quiet song from 0:16, uninterrupted final-card music, card pause/mute/visibility, menu cleanup, video-clock sync, both moral branches, natural finish, skip, autoplay recovery, missing-video fallback and saved endings');
+        assert.equal(staleModules, 0);
+        console.log('PASS: fresh core modules despite old cache, audible music after all three videos, Web Audio recovery, quiet song from 0:16, uninterrupted final cards, pause/mute/visibility, menu cleanup, natural finish, skip, autoplay recovery, missing-video fallback and saved endings');
     } finally {
         await browser.close();
     }

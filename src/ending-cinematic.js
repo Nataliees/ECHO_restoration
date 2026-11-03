@@ -140,6 +140,15 @@ export class EndingCinematic {
             this.music.pause();
             return;
         }
+        // Some browsers suspend Web Audio when a video releases audio focus.
+        // Recover only while the ending is visible and sound is enabled.
+        if (this.game.audioCtx && ['suspended', 'interrupted'].includes(this.game.audioCtx.state) && !this.musicContextResume) {
+            const resume = this.game.audioCtx.resume().catch(() => {}).finally(() => {
+                if (this.musicContextResume === resume) this.musicContextResume = null;
+            });
+            this.musicContextResume = resume;
+            this.game._audioResumePromise = resume;
+        }
         if (this.music.readyState < 1) return;
         if (!this.cardActive) {
             const target = MUSIC_OFFSET + this.video.currentTime;
@@ -200,7 +209,9 @@ export class EndingCinematic {
             this.music.pause();
             if (this.music.readyState >= 1) this.music.currentTime = MUSIC_OFFSET;
         }
-        if (this.video.hasAttribute('src')) {
+        // Keep the finished video's media session intact on the final card.
+        // Releasing it here can also interrupt the song in mobile browsers.
+        if (!keepMusic && this.video.hasAttribute('src')) {
             this.video.removeAttribute('src');
             this.video.load();
         }
