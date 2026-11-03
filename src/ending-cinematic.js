@@ -13,6 +13,7 @@ export class EndingCinematic {
     constructor(game) {
         this.game = game;
         this.active = false;
+        this.cardActive = false;
         this.session = 0;
         this.overlay = document.getElementById('ending-cinematic');
         this.video = document.getElementById('ending-video');
@@ -33,18 +34,26 @@ export class EndingCinematic {
             this.musicBlocked = true;
             console.warn('Ending music unavailable; keeping the original video soundtrack.');
         });
-        this.music.addEventListener('loadedmetadata', () => this._syncMusic(true));
+        this.music.addEventListener('loadedmetadata', () => {
+            this.music.currentTime = MUSIC_OFFSET;
+            this._syncMusic(true);
+        });
         this.music.addEventListener('error', () => { this.musicBlocked = true; });
         this.video.addEventListener('playing', () => {
             this.buffering = false;
             this._syncMusic(true);
         });
         this.video.addEventListener('waiting', () => {
+            if (this.cardActive) return;
             this.buffering = true;
             this.music.pause();
         });
-        this.video.addEventListener('pause', () => this.music.pause());
-        this.video.addEventListener('seeking', () => this.music.pause());
+        this.video.addEventListener('pause', () => {
+            if (!this.cardActive && !this.video.ended) this.music.pause();
+        });
+        this.video.addEventListener('seeking', () => {
+            if (!this.cardActive) this.music.pause();
+        });
         this.video.addEventListener('seeked', () => this._syncMusic(true));
         this.video.addEventListener('ended', () => this.finish());
         this.video.addEventListener('error', () => {
@@ -55,6 +64,10 @@ export class EndingCinematic {
         this.playButton.addEventListener('click', () => this.play());
         document.getElementById('ending-skip').addEventListener('click', () => this.finish());
         document.addEventListener('visibilitychange', () => {
+            if (this.cardActive) {
+                this._syncMusic();
+                return;
+            }
             if (!this.active || this.game.state === 'paused') return;
             if (document.hidden) {
                 this.resumeOnVisible = !this.video.paused;
@@ -114,21 +127,25 @@ export class EndingCinematic {
     }
 
     _musicAllowed() {
-        return this.active && !this.finishing && this.game.soundEnabled &&
-            this.game.state !== 'paused' && !document.hidden && !this.buffering &&
+        if (!this.game.soundEnabled || this.game.state === 'paused' || document.hidden) return false;
+        if (this.cardActive) return ['ending', 'ending-cinematic'].includes(this.game.state);
+        return this.active && !this.finishing && !this.buffering &&
             !this.video.paused && !this.video.ended && !this.video.seeking && this.video.readyState >= 3;
     }
 
     _syncMusic(force = false) {
+        if (this.active && !this.cardActive && this.video.ended && !this.finishing) this.finish();
         this.music.muted = !this.game.soundEnabled;
         if (!this._musicAllowed()) {
             this.music.pause();
             return;
         }
         if (this.music.readyState < 1) return;
-        const target = MUSIC_OFFSET + this.video.currentTime;
-        if (force || Math.abs(this.music.currentTime - target) > 0.25) this.music.currentTime = target;
-        this.music.playbackRate = this.video.playbackRate;
+        if (!this.cardActive) {
+            const target = MUSIC_OFFSET + this.video.currentTime;
+            if (force || Math.abs(this.music.currentTime - target) > 0.25) this.music.currentTime = target;
+        }
+        this.music.playbackRate = this.cardActive ? 1 : this.video.playbackRate;
         if (this.music.paused && !this.musicPending && !this.musicBlocked) {
             const session = this.session;
             const pending = this.music.play().catch(error => {
@@ -154,19 +171,23 @@ export class EndingCinematic {
         if (this.finishing) return this.finishing;
         const onComplete = this.onComplete;
         const session = this.session;
+        // Detach from the video clock before pausing/removing it, keeping the
+        // same music element and playback position for the final card.
+        this.cardActive = true;
         this.video.pause();
-        this.music.pause();
+        this._syncMusic();
         // Keep the last video frame on screen until its card is decoded.
         this.finishing = Promise.resolve(this.cardReady).catch(() => {}).then(() => {
             if (!this.active || session !== this.session) return;
             onComplete?.();
-            this.stop();
+            this.stop({ keepMusic: true });
         });
         return this.finishing;
     }
 
-    stop() {
+    stop({ keepMusic = false } = {}) {
         this.active = false;
+        this.cardActive = keepMusic;
         this.session++;
         this.onComplete = null;
         this.finishing = null;
@@ -175,8 +196,10 @@ export class EndingCinematic {
         this.caption.hidden = true;
         this.resumeOnVisible = false;
         this.video.pause();
-        this.music.pause();
-        if (this.music.readyState >= 1) this.music.currentTime = MUSIC_OFFSET;
+        if (!keepMusic) {
+            this.music.pause();
+            if (this.music.readyState >= 1) this.music.currentTime = MUSIC_OFFSET;
+        }
         if (this.video.hasAttribute('src')) {
             this.video.removeAttribute('src');
             this.video.load();

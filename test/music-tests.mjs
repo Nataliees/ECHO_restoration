@@ -15,6 +15,7 @@ game.soundEnabled=true;game.state='play';music.update(1);await Promise.resolve()
 document.hidden=true;listeners.get('visibilitychange')();assert.equal(music.audio.paused,true,'pause without relying on a hidden-tab RAF');
 document.hidden=false;game.state='menu';music.update(1);assert.equal(music.audio.paused,true);
 music.audio.currentTime=40;music.reset();assert.equal(music.audio.currentTime,0);
+game.state='ending';music.update(1);assert.equal(music.audio.paused,true,'gameplay track never overlaps the final-card song');
 console.log('PASS: music only after intro, quiet gain, voice ducking, loop, mute and background-tab pause');
 const menuMusic=new BackgroundMusic(game,{menu:true,src:'./assets/menu_music.mp3'});
 game.introSeen=false;game.state='menu';game.soundEnabled=true;

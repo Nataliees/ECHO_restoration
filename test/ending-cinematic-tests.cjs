@@ -13,10 +13,18 @@ const assert = require('node:assert/strict');
         page.on('pageerror', error => errors.push(error.message));
         await page.goto(process.env.ECHO_TEST_URL || 'http://127.0.0.1:8765');
         await page.waitForFunction(() => window.__game?.state === 'menu');
+        await page.evaluate(() => {
+            window.__cardMusicEvents = [];
+            const c = window.__game.ui.endingCinematic;
+            for (const name of ['pause', 'seeking']) c.music.addEventListener(name, () => {
+                if (c.cardActive) window.__cardMusicEvents.push(name);
+            });
+        });
 
         async function chooseEnding(endingId = 'accept', branch = endingId === 'rewrite' ? 'justify' : 'accept') {
             await page.evaluate(branch => {
                 const game = window.__game;
+                window.__cardMusicEvents = [];
                 game.hasActiveRun = true;
                 game.introSeen = true;
                 game.memory.load({
@@ -46,6 +54,18 @@ const assert = require('node:assert/strict');
             assert.equal(music.seekableBlob, true, 'MP3 seeks work without HTTP Range support');
             assert.ok(Math.abs(music.gain - 0.14 / 1.5) < 0.00001);
             assert.equal(music.menuPaused, true);
+        }
+
+        async function checkCardMusic(minimumTime = 16) {
+            await page.waitForFunction(minimum => {
+                const g = window.__game, c = g.ui.endingCinematic;
+                return g.state === 'ending' && c.cardActive && !c.active &&
+                    !c.music.paused && c.music.currentTime >= minimum;
+            }, minimumTime);
+            const time = await page.evaluate(() => window.__game.ui.endingCinematic.music.currentTime);
+            await page.waitForFunction(time => window.__game.ui.endingCinematic.music.currentTime > time + 0.15, time);
+            assert.equal(await page.evaluate(() => window.__game.music.audio.paused && window.__game.menuMusic.audio.paused), true);
+            assert.deepEqual(await page.evaluate(() => window.__cardMusicEvents), [], 'card transition never pauses or seeks the song');
         }
 
         await chooseEnding();
@@ -104,8 +124,28 @@ const assert = require('node:assert/strict');
         await page.waitForSelector('#ending-overlay.active');
         assert.equal(await page.locator('#ending-visual img').getAttribute('alt'), 'Принять правду');
         assert.equal(await page.locator('#ending-video').evaluate(video => video.paused), true);
+        await checkCardMusic(25.7);
+        await page.evaluate(() => window.__game.toggleSound());
+        await page.waitForFunction(() => window.__game.ui.endingCinematic.music.paused);
+        await page.evaluate(() => window.__game.toggleSound());
+        await page.waitForFunction(() => !window.__game.ui.endingCinematic.music.paused);
+        await page.keyboard.press('Escape');
+        await page.waitForFunction(() => window.__game.state === 'paused' && window.__game.ui.endingCinematic.music.paused);
+        const cardPausedAt = await page.evaluate(() => window.__game.ui.endingCinematic.music.currentTime);
+        await page.waitForTimeout(200);
+        assert.equal(await page.evaluate(() => window.__game.ui.endingCinematic.music.currentTime), cardPausedAt);
+        await page.keyboard.press('KeyE');
+        await page.waitForFunction(() => window.__game.state === 'ending' && !window.__game.ui.endingCinematic.music.paused);
+        await page.evaluate(() => {
+            Object.defineProperty(document, 'hidden', { configurable: true, value: true });
+            document.dispatchEvent(new Event('visibilitychange'));
+        });
         assert.equal(await page.evaluate(() => window.__game.ui.endingCinematic.music.paused), true);
+        await page.evaluate(() => { delete document.hidden; document.dispatchEvent(new Event('visibilitychange')); });
+        await page.waitForFunction(() => !window.__game.ui.endingCinematic.music.paused);
         await page.click('#ending-back');
+        assert.equal(await page.evaluate(() => window.__game.ui.endingCinematic.music.paused), true);
+        assert.equal(await page.evaluate(() => window.__game.ui.endingCinematic.cardActive), false);
 
         // Rejected autoplay exposes a real user gesture to resume playback.
         await page.evaluate(() => {
@@ -126,7 +166,7 @@ const assert = require('node:assert/strict');
         await page.click('#ending-skip');
         await page.waitForSelector('#ending-overlay.active');
         assert.equal(await page.locator('#ending-video').evaluate(video => video.hasAttribute('src')), false);
-        assert.equal(await page.evaluate(() => window.__game.ui.endingCinematic.music.paused), true);
+        await checkCardMusic();
         await page.click('#ending-back');
 
         // A missing video must still let the player read the earned ending.
@@ -161,6 +201,7 @@ const assert = require('node:assert/strict');
         await page.waitForFunction(() => window.__game.state === 'ending');
         await page.waitForSelector('#ending-overlay.active');
         assert.equal(await page.locator('#ending-visual img').getAttribute('alt'), 'Стереть');
+        await checkCardMusic(20.9);
         await page.click('#ending-back');
 
         await chooseEnding('rewrite');
@@ -200,6 +241,7 @@ const assert = require('node:assert/strict');
         await page.waitForFunction(() => window.__game.state === 'ending');
         await page.waitForSelector('#ending-overlay.final-card.active');
         assert.equal(await page.locator('#ending-visual img').getAttribute('src'), './assets/endings/start-again.png');
+        await checkCardMusic(21.8);
         await page.click('#ending-back');
 
         await chooseEnding('restart', 'justify');
@@ -211,7 +253,7 @@ const assert = require('node:assert/strict');
         await page.click('#ending-back');
         await page.waitForSelector('#menu-screen.active');
         assert.deepEqual(errors, []);
-        console.log('PASS: all three ending videos, menu song from 0:16 at gain 0.14/1.5, video-clock sync, pause/resume, both moral branches, mute, hidden-tab pause, natural finish, skip, autoplay recovery, missing-video fallback and saved endings');
+        console.log('PASS: all three ending videos, quiet song from 0:16, uninterrupted final-card music, card pause/mute/visibility, menu cleanup, video-clock sync, both moral branches, natural finish, skip, autoplay recovery, missing-video fallback and saved endings');
     } finally {
         await browser.close();
     }

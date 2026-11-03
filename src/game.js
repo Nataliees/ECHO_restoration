@@ -248,7 +248,7 @@ export class Game {
         this.player.clearInput();
         const media = [this.intro?.video, this.intro?.alarmAudio, this.intro?.explosionAudio,
             this.intro?.daughter, this.intro?.hero, this.recording?.daughter,
-            this.recording?.explosion, this.ui?.endingCinematic.video];
+            this.recording?.explosion, this.ui?.endingCinematic.video, this.ui?.endingCinematic.music];
         this._pausedMedia = [...new Set(media)].filter(item => item && !item.paused && !item.ended);
         this._pausedMedia.forEach(item => item.pause());
         this._audioWasRunning = !!this.audioCtx && this.audioCtx.state !== 'closed';
@@ -789,7 +789,7 @@ export class Game {
         this.menuMusic?.update(dt);
         if (this.state === 'paused') return;
 
-        if (this.ui?.endingCinematic.active) {
+        if (this.ui?.endingCinematic.active || this.ui?.endingCinematic.cardActive) {
             this.ui.endingCinematic.update();
             return;
         }

@@ -931,11 +931,12 @@ body.menu-view #subtitle-box, body.menu-view #interact-prompt { display:none !im
 .prologue-reserve { visibility:hidden; }
 .prologue-copy p { white-space:pre-line; margin:0 0 1.25em; }
 .prologue-copy p:last-child { margin-bottom:0; }
-#prologue-text p:last-child::after { content:'▌'; color:#a9d8cb; animation:prologue-cursor .85s steps(1) infinite; }
+.prologue-untyped { visibility:hidden; }
+#prologue-text p:last-child .prologue-typed::after { content:'▌'; position:absolute; color:#a9d8cb; animation:prologue-cursor .85s steps(1) infinite; }
 #prologue-skip { flex-shrink:0; font-family:'Courier New',monospace; color:#78968e; font-size:12px; }
 @keyframes prologue-cursor { 0%,49% { opacity:1; } 50%,100% { opacity:0; } }
 @media(max-height:620px) { #prologue-screen { justify-content:flex-start; padding:25px; gap:20px; } .prologue-copy { font-size:13px; line-height:1.65; } }
-@media(prefers-reduced-motion:reduce) { #prologue-text p:last-child::after { animation:none; } }
+@media(prefers-reduced-motion:reduce) { #prologue-text p:last-child .prologue-typed::after { animation:none; } }
 
 .prologue-copy, #prologue-skip { font-family:'Courier New',Courier,monospace; }
 .prologue-copy { letter-spacing:.025em; color:#d1d0c5; }

@@ -10,6 +10,7 @@
     "test:controls": "node test/controls-tests.cjs",
     "test:credits": "node test/credits-tests.cjs",
     "test:intro-layout": "node test/intro-layout-tests.cjs",
+    "test:prologue-layout": "node test/prologue-layout-tests.cjs",
     "test:menu-music": "node test/menu-music-tests.cjs"
   }
 }

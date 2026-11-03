@@ -1,5 +1,5 @@
 // User-supplied background track. Never plays over the prologue or cinematic.
-const GAME_STATES=new Set(['play','dialog','journal','memory','choice','ending']);
+const GAME_STATES=new Set(['play','dialog','journal','memory','choice']);
 export const BACKGROUND_MUSIC_VOLUME = .14;
 export class BackgroundMusic {
     constructor(game, options={}){
