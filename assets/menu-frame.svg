@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" preserveAspectRatio="none" fill="none">
+<!-- Original ECHO frame: offset channels and asymmetric corner joints. -->
+<g stroke="#66c9c7" stroke-width="1" opacity=".5">
+<path d="M58 17H422l17 11h273l20-11h414l35 35v243l-10 17v332l-33 33H775l-22-10H407l-18 10H54l-34-34V396l10-19V49Z"/>
+<path d="M78 32h322l18 11h310l17-11h388l31 31v178M1164 484v149l-29 29H806M370 662H67l-30-30V470M37 223V67l29-29" opacity=".35"/>
+<path d="M94 8h146l20 12h73M858 8h164l19 12h56M8 110v130l13 19v65M1192 382v121l-12 19v52M102 703h179l18-12h116M878 703h164l20-12h61"/>
+</g>
+<g stroke="#81e0d5" stroke-width="2" opacity=".85">
+<path d="M48 105V60l19-19h73M1058 40h70l35 35v34M1162 601v29l-27 27h-63M141 662H71l-33-33v-37"/>
+<path d="M272 18h63M934 677h58" stroke-width="3"/>
+</g>
+<g fill="#8be5d8"><circle cx="94" cy="8" r="3"/><circle cx="333" cy="20" r="2"/><circle cx="858" cy="8" r="2"/><circle cx="8" cy="110" r="2"/><circle cx="1192" cy="382" r="2"/><circle cx="1123" cy="691" r="3"/></g>
+<g stroke="#37666c" stroke-width="1" opacity=".6"><path d="M75 149h24l14 14v92l-13 15v104M1095 188h26l17 17v167l-10 13v92M79 509h28l15 15v63l17 14h122M868 113h151l15-13h65"/><path d="M110 149h17M110 156h11M1084 541h39M1084 549h25"/></g>
+<g fill="#d8ad70" opacity=".75"><rect x="1097" y="87" width="4" height="12"/><rect x="1105" y="87" width="4" height="12"/><rect x="1113" y="87" width="4" height="12"/></g>
+</svg>
