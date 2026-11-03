@@ -35,7 +35,7 @@ const output=process.env.ECHO_SCREENSHOTS||path.join(require('node:os').tmpdir()
  async function finish(expected,ending){
   await read('memory_toy',2.2,-.3);await focus('final_mirror',0,-2.3);await page.keyboard.press('KeyE');await page.waitForFunction(()=>window.__game.state==='ending');
   assert.deepEqual(await page.locator('.ending-option').evaluateAll(ns=>ns.map(n=>n.dataset.ending)),expected);
-  await page.click(`.ending-option[data-ending="${ending}"]`);if(['accept','rewrite'].includes(ending)){await page.waitForSelector('#ending-cinematic',{state:'visible'});await page.click('#ending-skip');}await page.click('#ending-back');await page.waitForSelector('#menu-screen.active');
+  await page.click(`.ending-option[data-ending="${ending}"]`);if(['accept','rewrite','restart'].includes(ending)){await page.waitForSelector('#ending-cinematic',{state:'visible'});await page.click('#ending-skip');}await page.click('#ending-back');await page.waitForSelector('#menu-screen.active');
  }
  await finish(['accept','restart'],'accept');
  await page.click('#btn-endings');await page.waitForSelector('#endings-screen.active');assert.match(await page.locator('#menu-endings').innerText(),/Принять правду/);await page.click('#btn-endings-back');

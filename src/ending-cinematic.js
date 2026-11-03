@@ -2,7 +2,8 @@
 // one media clock when playback pauses or resumes.
 const ENDING_VIDEOS = {
     accept: '../assets/ending_accept.mp4',
-    rewrite: '../assets/ending_rewrite.mp4'
+    rewrite: '../assets/ending_rewrite.mp4',
+    restart: '../assets/ending_restart.mp4'
 };
 export class EndingCinematic {
     constructor(game) {

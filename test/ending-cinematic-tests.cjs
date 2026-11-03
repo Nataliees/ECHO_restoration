@@ -14,20 +14,20 @@ const assert = require('node:assert/strict');
         await page.goto(process.env.ECHO_TEST_URL || 'http://127.0.0.1:8765');
         await page.waitForFunction(() => window.__game?.state === 'menu');
 
-        async function chooseEnding(endingId = 'accept') {
-            await page.evaluate(endingId => {
+        async function chooseEnding(endingId = 'accept', branch = endingId === 'rewrite' ? 'justify' : 'accept') {
+            await page.evaluate(branch => {
                 const game = window.__game;
                 game.hasActiveRun = true;
                 game.introSeen = true;
                 game.memory.load({
-                    moralChoice: endingId === 'rewrite' ? 'justify' : 'accept',
+                    moralChoice: branch,
                     fragments: ['child_drawing', 'evacuation_records', 'toy_memory'],
                     notesRead: ['evacuation_order', 'registry_damaged', 'reactor_override']
                 });
                 game._showScreen(null);
                 game.loadLevel(2);
                 game.interactions._openMirror();
-            }, endingId);
+            }, branch);
             await page.click(`.ending-option[data-ending="${endingId}"]`);
         }
 
@@ -134,8 +134,41 @@ const assert = require('node:assert/strict');
         assert.equal(await page.locator('#ending-video').evaluate(video => video.hasAttribute('src')), false);
         await page.click('#ending-back');
         await page.waitForSelector('#menu-screen.active');
+        // New Identity is available from either moral branch and has its own
+        // supplied video, soundtrack, saved ending and final title card.
+        await chooseEnding('restart');
+        await page.waitForFunction(() => {
+            const video = document.getElementById('ending-video');
+            return video.currentTime > 0.3 && !video.paused;
+        });
+        const restart = await page.locator('#ending-video').evaluate(video => ({
+            src: video.currentSrc, duration: video.duration, audio: video.webkitAudioDecodedByteCount,
+            label: video.getAttribute('aria-label')
+        }));
+        assert.ok(restart.src.endsWith('/assets/ending_restart.mp4'));
+        assert.ok(Math.abs(restart.duration - 6.083333) < 0.1);
+        assert.ok(restart.audio > 0);
+        assert.equal(restart.label, 'Создать новую личность');
+        assert.equal(await page.locator('#ending-cinematic-caption').isVisible(), false);
+        assert.equal(await page.evaluate(() => window.__game.music.audio.paused), true);
+        const savedRestart = await page.evaluate(() => JSON.parse(localStorage.getItem('echo_save_three_acts_v3')));
+        assert.equal(savedRestart.completedEnding, 'restart');
+        assert.ok(savedRestart.endings.includes('restart'));
+        await page.waitForFunction(() => window.__game.state === 'ending');
+        await page.waitForSelector('#ending-overlay.final-card.active');
+        assert.equal(await page.locator('#ending-visual img').getAttribute('src'), './assets/endings/start-again.png');
+        await page.click('#ending-back');
+
+        await chooseEnding('restart', 'justify');
+        await page.waitForFunction(() => window.__game.state === 'ending-cinematic');
+        await page.click('#ending-skip');
+        await page.waitForSelector('#ending-overlay.final-card.active');
+        assert.equal(await page.locator('#ending-visual img').getAttribute('src'), './assets/endings/start-again.png');
+        assert.equal(await page.locator('#ending-video').evaluate(video => video.hasAttribute('src')), false);
+        await page.click('#ending-back');
+        await page.waitForSelector('#menu-screen.active');
         assert.deepEqual(errors, []);
-        console.log('PASS: both ending videos and soundtracks, branch selection, mute, hidden-tab pause, natural finish, skip, autoplay recovery, missing-video fallback and saved endings');
+        console.log('PASS: all three ending videos and soundtracks, both moral branches, mute, hidden-tab pause, natural finish, skip, autoplay recovery, missing-video fallback and saved endings');
     } finally {
         await browser.close();
     }
