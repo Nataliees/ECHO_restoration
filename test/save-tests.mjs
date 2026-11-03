@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import { SaveSystem } from '../src/save.js';
+const data=new Map();globalThis.localStorage={getItem:k=>data.get(k)||null,setItem:(k,v)=>data.set(k,v)};
+assert.equal(SaveSystem.hasSave(),false);
+const snapshot={level:1,introSeen:true,memory:{fragments:['child_drawing'],notesRead:['evacuation_order'],events:[],moralChoice:null},player:{x:1.2,z:2.4,yaw:.7,pitch:-.2},endings:['accept'],branchCheckpoint:{level:1,memory:{moralChoice:null}}};
+SaveSystem.save(snapshot);assert.equal(SaveSystem.hasSave(),true);
+const copy=SaveSystem.load();for(const key of Object.keys(snapshot))assert.deepEqual(copy[key],snapshot[key]);
+SaveSystem.clearProgress();assert.equal(SaveSystem.hasSave(),false);assert.deepEqual(SaveSystem.load().endings,['accept']);
+data.set('echo_save_three_acts_v3','broken');assert.equal(SaveSystem.hasSave(),false);assert.equal(SaveSystem.load().level,0);
+console.log('PASS: continue position, branch checkpoint, persistent endings and corrupt-save recovery');
