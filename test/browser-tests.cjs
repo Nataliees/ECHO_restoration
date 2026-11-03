@@ -14,7 +14,7 @@ const output=process.env.ECHO_SCREENSHOTS||path.join(require('node:os').tmpdir()
  await page.click('#btn-about');await page.waitForSelector('#about-screen.active');await page.click('#btn-about-back');
  await page.click('#btn-start');await page.waitForFunction(()=>window.__game.state==='prologue');await page.waitForFunction(()=>window.__game.prologue.sound.count>0);await page.click('#prologue-skip');assert.equal(await page.evaluate(()=>window.__game.prologue.sound.nodes.size),0);assert.ok(Math.abs(await page.evaluate(()=>{const t=window.__game.prologue.radio.timeline;return t.voiceStart-t.textEnd;})-.5)<.001);await page.waitForFunction(()=>window.__game.state==='intro');await page.click('#intro-skip');await page.waitForFunction(()=>window.__game.state==='play');
  async function focus(id,x,z){
-  await page.evaluate(({id,x,z})=>{const g=window.__game,o=g.interactables.find(o=>o.userData.id===id||o.userData.type===id);if(!o)throw Error('missing '+id);g.player.setPosition(x,1.7,z);const dx=o.position.x-x,dz=o.position.z-z;g.player.yaw=Math.atan2(-dx,-dz);g.player.pitch=Math.atan2(o.position.y-1.7,Math.hypot(dx,dz));g.player._applyCamera();g.camera.updateMatrixWorld(true);g.interactions.updateHover();if(g.interactions.hoveredObject!==o)throw Error('unreachable '+id);},{id,x,z});
+  await page.evaluate(({id,x,z})=>{const g=window.__game,o=g.interactables.find(o=>o.userData.id===id||o.userData.type===id);if(!o)throw Error('missing '+id);g.player.setPosition(x,1.7,z);const dx=o.position.x-x,dz=o.position.z-z;g.player.yaw=Math.atan2(-dx,-dz);g.player.pitch=Math.atan2(o.position.y-1.7,Math.hypot(dx,dz));g.player._applyCamera();g.scene.updateMatrixWorld(true);g.camera.updateMatrixWorld(true);g.interactions.updateHover();if(g.interactions.hoveredObject!==o)throw Error('unreachable '+id);},{id,x,z});
  }
  async function read(id,x,z){await focus(id,x,z);await page.keyboard.press('KeyE');await page.waitForSelector('#note-overlay.active');await page.keyboard.press('KeyE');}
  await read('drawing_child',-2.8,-2.6);await focus('emergency_receiver',2.6,-2.8);await page.keyboard.press('KeyE');await page.waitForSelector('#recording-overlay.active');await page.keyboard.press('KeyE');
@@ -35,7 +35,7 @@ const output=process.env.ECHO_SCREENSHOTS||path.join(require('node:os').tmpdir()
  async function finish(expected,ending){
   await read('memory_toy',2.2,-.3);await focus('final_mirror',0,-2.3);await page.keyboard.press('KeyE');await page.waitForFunction(()=>window.__game.state==='ending');
   assert.deepEqual(await page.locator('.ending-option').evaluateAll(ns=>ns.map(n=>n.dataset.ending)),expected);
-  await page.click(`[data-ending="${ending}"]`);if(ending==='accept'){await page.waitForSelector('#ending-cinematic',{state:'visible'});await page.click('#ending-skip');}await page.click('#ending-back');await page.waitForSelector('#menu-screen.active');
+  await page.click(`[data-ending="${ending}"]`);if(['accept','rewrite'].includes(ending)){await page.waitForSelector('#ending-cinematic',{state:'visible'});await page.click('#ending-skip');}await page.click('#ending-back');await page.waitForSelector('#menu-screen.active');
  }
  await finish(['accept','restart'],'accept');
  await page.click('#btn-endings');await page.waitForSelector('#endings-screen.active');assert.match(await page.locator('#menu-endings').innerText(),/Принять правду/);await page.click('#btn-endings-back');

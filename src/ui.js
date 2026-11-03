@@ -361,12 +361,12 @@ export class UI {
 
     showEnding(ending, opts = {}) {
         this.endingCinematic.stop();
-        if (ending.id === 'accept') {
+        if (this.endingCinematic.hasVideo(ending.id)) {
             this.endingOverlay?.classList.remove('active');
             this.game.state = 'ending-cinematic';
             this.game.music?.pause();
             this.game._stopWhispers();
-            this.endingCinematic.start(() => {
+            this.endingCinematic.start(ending, () => {
                 this.game.state = 'ending';
                 this._showEndingSummary(ending, opts);
             });

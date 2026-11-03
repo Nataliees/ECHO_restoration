@@ -14,24 +14,24 @@ const assert = require('node:assert/strict');
         await page.goto(process.env.ECHO_TEST_URL || 'http://127.0.0.1:8765');
         await page.waitForFunction(() => window.__game?.state === 'menu');
 
-        async function chooseAccept() {
-            await page.evaluate(() => {
+        async function chooseEnding(endingId = 'accept') {
+            await page.evaluate(endingId => {
                 const game = window.__game;
                 game.hasActiveRun = true;
                 game.introSeen = true;
                 game.memory.load({
-                    moralChoice: 'accept',
+                    moralChoice: endingId === 'rewrite' ? 'justify' : 'accept',
                     fragments: ['child_drawing', 'evacuation_records', 'toy_memory'],
                     notesRead: ['evacuation_order', 'registry_damaged', 'reactor_override']
                 });
                 game._showScreen(null);
                 game.loadLevel(2);
                 game.interactions._openMirror();
-            });
-            await page.click('[data-ending="accept"]');
+            }, endingId);
+            await page.click(`[data-ending="${endingId}"]`);
         }
 
-        await chooseAccept();
+        await chooseEnding();
         await page.waitForFunction(() => {
             const video = document.getElementById('ending-video');
             return !video.paused && video.currentTime > 0.2;
@@ -79,7 +79,7 @@ const assert = require('node:assert/strict');
                 return play();
             };
         });
-        await chooseAccept();
+        await chooseEnding();
         await page.waitForSelector('#ending-play', { state: 'visible' });
         await page.click('#ending-play');
         await page.waitForFunction(() => !document.getElementById('ending-video').paused);
@@ -90,13 +90,46 @@ const assert = require('node:assert/strict');
 
         // A missing video must still let the player read the earned ending.
         await page.route('**/assets/ending_accept.mp4', route => route.fulfill({ status: 404, body: 'missing' }));
-        await chooseAccept();
+        await chooseEnding();
         await page.waitForSelector('#ending-overlay.active');
         assert.equal(await page.locator('#ending-title').innerText(), 'Принять правду');
         await page.click('#ending-back');
         await page.waitForSelector('#menu-screen.active');
+
+        // The justification branch must select the supplied second video,
+        // including its existing soundtrack, and show its own ending summary.
+        await chooseEnding('rewrite');
+        await page.waitForFunction(() => {
+            const video = document.getElementById('ending-video');
+            return video.currentTime > 0.3 && !video.paused;
+        });
+        const rewrite = await page.locator('#ending-video').evaluate(video => ({
+            src: video.currentSrc, duration: video.duration, audio: video.webkitAudioDecodedByteCount,
+            label: video.getAttribute('aria-label')
+        }));
+        assert.ok(rewrite.src.endsWith('/assets/ending_rewrite.mp4'));
+        assert.ok(Math.abs(rewrite.duration - 5.208333) < 0.1);
+        assert.ok(rewrite.audio > 0);
+        assert.equal(rewrite.label, 'Стереть');
+        assert.equal(await page.evaluate(() => window.__game.music.audio.paused), true);
+        const savedRewrite = await page.evaluate(() => JSON.parse(localStorage.getItem('echo_save_three_acts_v3')));
+        assert.equal(savedRewrite.completedEnding, 'rewrite');
+        assert.ok(savedRewrite.endings.includes('rewrite'));
+        await page.waitForFunction(() => window.__game.state === 'ending');
+        await page.waitForSelector('#ending-overlay.active');
+        assert.equal(await page.locator('#ending-title').innerText(), 'Стереть');
+        await page.click('#ending-back');
+
+        await chooseEnding('rewrite');
+        await page.waitForFunction(() => window.__game.state === 'ending-cinematic');
+        await page.keyboard.press('Escape');
+        await page.waitForSelector('#ending-overlay.active');
+        assert.equal(await page.locator('#ending-title').innerText(), 'Стереть');
+        assert.equal(await page.locator('#ending-video').evaluate(video => video.hasAttribute('src')), false);
+        await page.click('#ending-back');
+        await page.waitForSelector('#menu-screen.active');
         assert.deepEqual(errors, []);
-        console.log('PASS: accept cinematic, embedded audio, mute, hidden-tab pause, natural finish, skip, autoplay recovery, missing-video fallback and saved ending');
+        console.log('PASS: both ending videos and soundtracks, branch selection, mute, hidden-tab pause, natural finish, skip, autoplay recovery, missing-video fallback and saved endings');
     } finally {
         await browser.close();
     }

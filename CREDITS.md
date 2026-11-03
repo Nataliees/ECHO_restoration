@@ -41,3 +41,8 @@ is retained unchanged in `assets/ending_accept.mp4`; the voice is embedded at
 6 seconds, skipping 950 ms of leading room noise. The original voice recording
 is retained unchanged as `assets/ending_accept_hero.mp3`. Rebuild the audio track
 with `python tools/build-ending-accept.py`.
+
+## Second ending cinematic
+
+Video and soundtrack supplied by the project user as `Sequence 01_1.mp4`,
+retained unchanged as `assets/ending_rewrite.mp4` for the rewrite ending.

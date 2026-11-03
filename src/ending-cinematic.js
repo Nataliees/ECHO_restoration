@@ -1,5 +1,9 @@
-// The supplied voice is embedded at 6 seconds in the video audio track.
-// One media clock keeps the line aligned when playback pauses or resumes.
+// Each ending video carries its own audio track, so picture and sound share
+// one media clock when playback pauses or resumes.
+const ENDING_VIDEOS = {
+    accept: '../assets/ending_accept.mp4',
+    rewrite: '../assets/ending_rewrite.mp4'
+};
 export class EndingCinematic {
     constructor(game) {
         this.game = game;
@@ -31,13 +35,19 @@ export class EndingCinematic {
         });
     }
 
-    start(onComplete) {
+    hasVideo(endingId) {
+        return typeof ENDING_VIDEOS[endingId] === 'string';
+    }
+
+    start(ending, onComplete) {
         this.stop();
         this.active = true;
         this.onComplete = onComplete;
         this.overlay.hidden = false;
         document.body.classList.add('ending-cinematic-active');
-        this.video.src = new URL('../assets/ending_accept.mp4', import.meta.url).href;
+        this.overlay.setAttribute('aria-label', `Кат-сцена: ${ending.title}`);
+        this.video.setAttribute('aria-label', ending.title);
+        this.video.src = new URL(ENDING_VIDEOS[ending.id], import.meta.url).href;
         this.update();
         this.play();
     }
