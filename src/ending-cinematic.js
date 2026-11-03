@@ -22,11 +22,8 @@ export class EndingCinematic {
         });
         this.playButton.addEventListener('click', () => this.play());
         document.getElementById('ending-skip').addEventListener('click', () => this.finish());
-        window.addEventListener('keydown', event => {
-            if (this.active && event.code === 'Escape' && !event.repeat) this.finish();
-        });
         document.addEventListener('visibilitychange', () => {
-            if (!this.active) return;
+            if (!this.active || this.game.state === 'paused') return;
             if (document.hidden) {
                 this.resumeOnVisible = !this.video.paused;
                 this.video.pause();
@@ -41,15 +38,17 @@ export class EndingCinematic {
         return typeof ENDING_VIDEOS[endingId] === 'string';
     }
 
-    start(ending, onComplete) {
+    start(ending, onComplete, cardReady = Promise.resolve()) {
         this.stop();
         this.active = true;
         this.onComplete = onComplete;
+        this.cardReady = cardReady;
         this.endingId = ending.id;
         this.overlay.hidden = false;
         document.body.classList.add('ending-cinematic-active');
         this.overlay.setAttribute('aria-label', `Кат-сцена: ${ending.title}`);
         this.video.setAttribute('aria-label', ending.title);
+        this.video.dataset.ending = ending.id;
         this.video.src = new URL(ENDING_VIDEOS[ending.id], import.meta.url).href;
         this.update();
         this.play();
@@ -73,15 +72,25 @@ export class EndingCinematic {
 
     finish() {
         if (!this.active) return;
+        if (this.finishing) return this.finishing;
         const onComplete = this.onComplete;
-        this.stop();
-        onComplete?.();
+        const session = this.session;
+        this.video.pause();
+        // Keep the last video frame on screen until its card is decoded.
+        this.finishing = Promise.resolve(this.cardReady).catch(() => {}).then(() => {
+            if (!this.active || session !== this.session) return;
+            onComplete?.();
+            this.stop();
+        });
+        return this.finishing;
     }
 
     stop() {
         this.active = false;
         this.session++;
         this.onComplete = null;
+        this.finishing = null;
+        this.cardReady = null;
         this.endingId = null;
         this.caption.hidden = true;
         this.resumeOnVisible = false;

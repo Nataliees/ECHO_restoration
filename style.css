@@ -783,8 +783,14 @@ body.intro-active #crosshair { display:none !important; }
 .menu-version a:hover { color: #d2ece2; }
 /* Minimal main menu and separate information screens. */
 [hidden] { display: none !important; }
-#ending-cinematic { position:fixed; inset:0; z-index:1000; background:#000; }
+#ending-cinematic { position:fixed; inset:0; z-index:1000; background:#000; overflow:hidden; }
 #ending-video { display:block; width:100%; height:100%; object-fit:contain; }
+#game-container canvas { cursor:none; }
+/* The second source has a black inset around its actual picture. Match the
+   first video's visible width while leaving its original media untouched. */
+#ending-video[data-ending="rewrite"] { transform:scale(1.42); }
+#pause-screen { position:fixed; inset:0; z-index:1100; background:#03090c; }
+#pause-screen .menu-btn:focus-visible { outline:1px solid #a5dbd4; outline-offset:4px; color:#edfff8; }
 #ending-skip { position:absolute; bottom:max(24px,env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%); margin:0; color:#e2e8e6; text-shadow:0 1px 4px #000; }
 #ending-play { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); margin:0; padding:16px 24px; background:#081116dd; color:#fff; }
 .main-menu-actions { display:flex; flex-direction:column; gap:10px; width:min(82vw,310px); margin:24px 0 6px; }
@@ -989,7 +995,7 @@ body.menu-view #subtitle-box, body.menu-view #interact-prompt { display:none !im
 
 /* Finale cards and the complete, readable endings archive. */
 #ending-cinematic-caption { position:absolute; left:50%; bottom:max(80px,12vh); transform:translateX(-50%); margin:0; padding:8px 18px; max-width:90%; width:max-content; color:#f0f3ed; background:#000b; text-align:center; font:clamp(17px,2vw,24px)/1.5 'ECHO Interface',sans-serif; text-shadow:0 2px 5px #000; }
-#ending-overlay.final-card { position:fixed; inset:0; padding:0; background:#020607; backdrop-filter:none; overflow:hidden; }
+#ending-overlay.final-card { position:fixed; inset:0; padding:0; background:#020607; backdrop-filter:none; overflow:hidden; transition:none; }
 #ending-overlay.final-card > .ending-content { width:100%; height:100%; max-width:none; max-height:none; margin:0; padding:0; border:0; background:none; box-shadow:none; backdrop-filter:none; display:flex; align-items:center; justify-content:center; }
 #ending-overlay.final-card :is(.panel-kicker,#ending-title,#ending-status,#ending-choice,#ending-text) { display:none; }
 #ending-overlay.final-card #ending-visual { display:flex; width:100%; height:calc(100% - 120px); margin:0 0 52px; padding:0; border:0; background:none; }

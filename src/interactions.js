@@ -162,7 +162,7 @@ export class Interactions {
         const available = this.game.memory.getAvailableEndings();
         if(!available.length){this.game.ui.showSubtitle('Сначала примите решение в лаборатории.',4000);return;}
         this.game.state = 'ending';
-        if (document.pointerLockElement) document.exitPointerLock();
+        if (document.pointerLockElement) this.game._releasePointerLock();
         this.game.ui.showEndingChoice(available, endingId => {
             if (!endingId) {
                 this.game.state = 'play';

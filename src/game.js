@@ -1,4 +1,5 @@
 import { BackgroundMusic } from './music.js';
+import { KeyboardControls } from './keyboard-controls.js';
 import { PrologueSequence } from './prologue.js';
 import { dressLaterAct } from './later-acts.js';
 import { makeModel } from './models.js';
@@ -56,6 +57,7 @@ export class Game {
         this.music = new BackgroundMusic(this);
         this.recording = new RecoveredTransmission(this);
         this._bindUI();
+        this.keyboard = new KeyboardControls(this);
         this._updateMenuState();
 
         window.addEventListener('resize', () => this._onResize());
@@ -105,7 +107,6 @@ export class Game {
         const startBtn = document.getElementById('btn-start');
         const continueBtn = document.getElementById('btn-continue');
         const resumeBtn = document.getElementById('btn-resume');
-        const restartBtn = document.getElementById('btn-restart');
         const backMenuBtn = document.getElementById('btn-back-menu');
 
         document.getElementById('btn-return-branch')?.addEventListener('click', () => this.returnToBranch());
@@ -116,15 +117,8 @@ export class Game {
         if (startBtn) startBtn.addEventListener('click', () => this.startNewGame());
         if (continueBtn) continueBtn.addEventListener('click', () => this.continueGame());
         if (resumeBtn) resumeBtn.addEventListener('click', () => this.resume());
-        if (restartBtn) restartBtn.addEventListener('click', () => this.startNewGame());
         if (backMenuBtn) backMenuBtn.addEventListener('click', () => this.backToMenu());
 
-        const canvas = this.renderer.domElement;
-        if (canvas) {
-            canvas.addEventListener('click', () => {
-                if (this.state === 'play') this._requestPointerLock();
-            });
-        }
     }
 
     _updateMenuState() {
@@ -168,7 +162,7 @@ export class Game {
         this.state = 'prologue';
         this.introSeen = false;
         this._loadLevel(0);
-        if (document.pointerLockElement) document.exitPointerLock();
+        if (document.pointerLockElement) this._releasePointerLock();
         this.prologue.start();
     }
 
@@ -186,8 +180,7 @@ export class Game {
         this.ui.announceLocation(levels[this.levelIndex]);
         this.ui.showSubtitle('Проект ECHO. Восстановление памяти запущено.', 4200);
         this._startWhispers();
-        // Browsers usually prohibit pointer lock without a fresh user gesture.
-        // Clicking the game canvas enables mouse look, as before.
+        this._requestPointerLock();
     }
 
     continueGame() {
@@ -226,7 +219,7 @@ export class Game {
         if (this.state === 'prologue') {
             this.prologue.start();
         } else if (this.state === 'intro') {
-            if (document.pointerLockElement) document.exitPointerLock();
+            if (document.pointerLockElement) this._releasePointerLock();
             this.intro.start();
         } else {
             this._requestPointerLock();
@@ -236,29 +229,60 @@ export class Game {
     }
 
     pause() {
-        if (this.state !== 'play') return;
+        if (!['play','dialog','journal','memory','choice','ending','prologue','intro','ending-cinematic'].includes(this.state)) return;
+        this._pausedState = this.state;
         this.saveState();
         this.state = 'paused';
+        this.player.clearInput();
+        const media = [this.intro?.video, this.intro?.alarmAudio, this.intro?.explosionAudio,
+            this.intro?.daughter, this.intro?.hero, this.recording?.daughter,
+            this.recording?.explosion, this.ui?.endingCinematic.video];
+        this._pausedMedia = [...new Set(media)].filter(item => item && !item.paused && !item.ended);
+        this._pausedMedia.forEach(item => item.pause());
+        this._audioWasRunning = !!this.audioCtx && this.audioCtx.state !== 'closed';
+        if (this._audioWasRunning) {
+            this.audioCtx.suspend().catch(() => {});
+            // A rapid E, Escape sequence can still have a pending resume.
+            this._audioResumePromise?.then(() => {
+                if (this.state === 'paused') this.audioCtx.suspend().catch(() => {});
+            });
+        }
+        this.prologue?.radio.pause();
+        this.recording?.pause();
         this.music?.pause();
-        document.exitPointerLock();
-        this._showScreen('pause-screen');
+        if (document.pointerLockElement) this._releasePointerLock();
+        document.getElementById('pause-screen').classList.add('active');
+        document.getElementById('btn-resume').focus({ preventScroll: true });
     }
 
     resume() {
         if (this.state !== 'paused') return;
-        this.state = 'play';
-        this._showScreen(null);
-        this._requestPointerLock();
+        this.state = this._pausedState || 'play';
+        this._pausedState = null;
+        this.player.clearInput();
+        document.getElementById('pause-screen').classList.remove('active');
+        if (this._audioWasRunning) this._audioResumePromise = this.audioCtx?.resume().catch(() => {});
+        this.prologue?.radio.resume();
+        this.recording?.resume();
+        for (const media of this._pausedMedia || []) {
+            if (media === this.ui.endingCinematic.video) this.ui.endingCinematic.play();
+            else media.play().catch(() => {});
+        }
+        this._pausedMedia = [];
+        if (this.state === 'play') this._requestPointerLock();
     }
 
     backToMenu() {
+        this._pausedState = null;
+        this._pausedMedia = [];
+        this.player.clearInput();
         this.music?.pause();        this.prologue?.stop();
         if (this.hasActiveRun) this.saveState();
         this.hasActiveRun = false;
         this.intro?.stop();
         this.finishRecoveredRecording();
         this.state = 'menu';
-        document.exitPointerLock();
+        this._releasePointerLock();
         if (this.ui) this.ui.resetForMenu();
         this._clearLevel();
         this._showScreen('menu-screen');
@@ -266,9 +290,15 @@ export class Game {
         this._stopWhispers();
     }
 
+    _releasePointerLock() {
+        if (this.keyboard) this.keyboard.wasLocked = false;
+        if (document.pointerLockElement) document.exitPointerLock();
+    }
+
     _requestPointerLock() {
         if (!this.renderer || !this.renderer.domElement) return;
         if (this.player && this.player.isMobile) return;
+        if (document.pointerLockElement === this.renderer.domElement) return;
         try {
             this.renderer.domElement.requestPointerLock()?.catch(()=>{});
         } catch (e) { /* ignore */ }
@@ -304,7 +334,7 @@ export class Game {
             this.branchCheckpoint.memory.moralChoice=null;
         }
         this.saveState();this.state='choice';
-        if(document.pointerLockElement)document.exitPointerLock();
+        if(document.pointerLockElement)this._releasePointerLock();
         this.ui.showMoralChoice(choice=>{
             if (!this.memory.chooseResponsibility(choice)) return;
             this.completedEnding=null;this.state='play';this.ui.hideMoralChoice();this.loadLevel(2);this._requestPointerLock();
@@ -644,7 +674,7 @@ export class Game {
     playRecoveredRecording() {
         if (this.state !== 'play' || !this.recording) return;
         this.state = 'memory';
-        if (document.pointerLockElement) document.exitPointerLock();
+        if (document.pointerLockElement) this._releasePointerLock();
         this.ui.showTransmission();
         this.recording.play(
             (status, line) => this.ui.updateTransmission(status, line),
@@ -739,6 +769,7 @@ export class Game {
         requestAnimationFrame(() => this._animate());
         const dt = Math.min(this.clock.getDelta(), 0.05);
         this.music?.update(dt);
+        if (this.state === 'paused') return;
 
         if (this.ui?.endingCinematic.active) {
             this.ui.endingCinematic.update();

@@ -32,22 +32,12 @@ export class Player {
     _bindKeyboard() {
         window.addEventListener('blur', () => {this.keys=Object.create(null);});
         window.addEventListener('keydown', (e) => {
-            if(e.repeat && ['KeyE','KeyJ','Escape'].includes(e.code))return;
-            if(e.code==='KeyE' && this.game.state==='memory'){this.game.finishRecoveredRecording();return;}
-            if (e.code === 'Escape') {
-                if (this.game.state === 'play') this.game.pause();
-                else if (this.game.state === 'paused') this.game.resume();
-                return;
-            }
-            if (e.code === 'KeyE') {
-                if (this.game.state === 'play') this.game.interactions.interact();
-                return;
-            }
+            if(e.repeat && e.code === 'KeyJ')return;
             if (e.code === 'KeyJ') {
                 if (this.game.state === 'play') this.game.ui.toggleJournal();
                 return;
             }
-            this.keys[e.code] = true;
+            if (this.game.state === 'play') this.keys[e.code] = true;
         });
 
         window.addEventListener('keyup', (e) => {
@@ -55,8 +45,9 @@ export class Player {
         });
 
         document.addEventListener('mousemove', (e) => {
-            if (document.pointerLockElement !== this.domElement) return;
             if (this.game.state !== 'play') return;
+            // Regular movement also works before the browser grants pointer
+            // lock. E acquires it using a keyboard gesture; no click is needed.
             this.yaw -= e.movementX * 0.0022;
             this.pitch -= e.movementY * 0.0022;
             this.pitch = Math.max(-Math.PI / 2 + 0.05, Math.min(Math.PI / 2 - 0.05, this.pitch));
@@ -192,6 +183,11 @@ export class Player {
         this.position.z = resolved.z;
 
         this._applyCamera();
+    }
+
+    clearInput() {
+        this.keys = Object.create(null);
+        this._touch.forward = this._touch.strafe = 0;
     }
 
     _applyCamera() {

@@ -1,4 +1,5 @@
 import { PrologueRadio } from './prologue-radio.js';
+import { PausableTimers } from './pausable-timers.js';
 /**
  * Recovered residential-sector transmission.
  * Uses the approved English daughter line and explosion audio, NEVER the hero line.
@@ -15,16 +16,14 @@ export class RecoveredTransmission {
         this.daughter.volume = 0.70;
         this.explosion.volume = 0.82;
         this.active = false;
-        this.timers = [];
+        this.timers = new PausableTimers();
         this.routed = false;
     }
 
     _later(fn, delay) {
-        const timer = setTimeout(() => {
-            this.timers = this.timers.filter(x => x !== timer);
+        this.timers.set(() => {
             if (this.active) fn();
         }, delay);
-        this.timers.push(timer);
     }
 
     _routeAudio() {
@@ -136,11 +135,13 @@ export class RecoveredTransmission {
         }, 4900);
     }
 
+    pause() { this.timers.pause(); this.prelude.pause(); }
+    resume() { this.timers.resume(); this.prelude.resume(); }
+
     stop() {
         this.active = false;
         this.prelude.stop();
-        this.timers.forEach(clearTimeout);
-        this.timers.length = 0;
+        this.timers.clear();
         this.daughter.pause();
         this.explosion.pause();
         try {

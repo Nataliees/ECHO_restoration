@@ -6,6 +6,7 @@
     "test": "node test/story-tests.mjs && node test/interaction-tests.mjs && node test/markup-tests.mjs && node test/model-tests.mjs && node test/save-tests.mjs && node test/music-tests.mjs",
     "test:browser": "node test/browser-tests.cjs",
     "test:ending": "node test/ending-cinematic-tests.cjs",
-    "test:gallery": "node test/ending-gallery-tests.cjs"
+    "test:gallery": "node test/ending-gallery-tests.cjs",
+    "test:controls": "node test/controls-tests.cjs"
   }
 }

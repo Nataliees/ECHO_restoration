@@ -1,3 +1,4 @@
+import { PausableTimers } from './pausable-timers.js';
 let voiceData;
 export async function preloadPrologueRadio(){
     const response=await fetch(new URL('../assets/prologue_daughter.mp3',import.meta.url));
@@ -8,7 +9,7 @@ export async function preloadPrologueRadio(){
 // Uses the same radio band, saturation, quantization and flutter as intro "Daddy?".
 export class PrologueRadio {
     constructor(game){
-        this.game=game;this.nodes=[];this.active=false;this.captionTimers=[];
+        this.game=game;this.nodes=[];this.active=false;this.timers=new PausableTimers();
         document.addEventListener('visibilitychange',()=>this.update());this.ready=!game.audioCtx||!voiceData;
         if(!this.ready)game.audioCtx.decodeAudioData(voiceData.slice(0)).then(buffer=>{this.buffer=buffer;}).catch(error=>console.warn('Radio prelude unavailable',error)).finally(()=>{this.ready=true;});
     }
@@ -24,14 +25,14 @@ export class PrologueRadio {
     play(onComplete, options={}){
         this.stop();this.active=true;
         const ctx=this.game.audioCtx;
-        if(!ctx||!this.buffer){this.timer=setTimeout(()=>{if(this.active)onComplete();},2400);return;}
+        if(!ctx||!this.buffer){this.timers.set(()=>{if(this.active)onComplete();},2400);return;}
         const now=ctx.currentTime,offset=options.full?0:.214,voiceStart=now+.5,voiceEnd=voiceStart+this.buffer.duration-offset;
         this.timeline={textEnd:now,preNoiseStart:now+.22,voiceStart,voiceEnd,postNoiseStart:voiceEnd+.02,introAt:voiceEnd+.26};
         if(options.onVoiceStart){
-            this.captionTimers.push(setTimeout(()=>{if(this.active)options.onVoiceStart();},Math.max(0,(voiceStart-now)*1000)));
+            this.timers.set(()=>{if(this.active)options.onVoiceStart();},Math.max(0,(voiceStart-now)*1000));
         }
         if(options.onVoiceEnd){
-            this.captionTimers.push(setTimeout(()=>{if(this.active)options.onVoiceEnd();},Math.max(0,(voiceEnd-now)*1000)));
+            this.timers.set(()=>{if(this.active)options.onVoiceEnd();},Math.max(0,(voiceEnd-now)*1000));
         }
         this.master=ctx.createGain();this.master.gain.value=this.game.soundEnabled?1:0;this.master.connect(ctx.destination);this.nodes.push(this.master);
         const voice=ctx.createBufferSource(),high=ctx.createBiquadFilter(),low=ctx.createBiquadFilter(),saturation=ctx.createWaveShaper(),crush=ctx.createWaveShaper(),gain=ctx.createGain(),flutter=ctx.createOscillator(),flutterGain=ctx.createGain();
@@ -45,14 +46,14 @@ export class PrologueRadio {
         this.noise(now+.22,.26,.075);
         this.noise(voiceStart,voiceEnd-voiceStart,.009);
         const tail=this.noise(voiceEnd+.02,.24,.07);
-        tail.onended=()=>{if(this.active)onComplete();};
+        tail.onended=()=>{if(this.active)this.timers.set(()=>{if(this.active)onComplete();},0);};
         flutter.start(voiceStart);flutter.stop(voiceEnd);voice.start(voiceStart,offset);
     }
     update(){if(this.master)this.master.gain.value=this.game.soundEnabled&&!document.hidden?1:0;}
+    pause(){this.timers.pause();}
+    resume(){this.timers.resume();}
     stop(){
-        this.active=false;clearTimeout(this.timer);
-        for(const timer of this.captionTimers)clearTimeout(timer);
-        this.captionTimers=[];
+        this.active=false;this.timers.clear();
         for(const node of this.nodes){try{node.stop?.();}catch{}node.disconnect();}
         this.nodes=[];this.master=null;
     }

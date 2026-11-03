@@ -188,7 +188,7 @@ export class UI {
             this.updateMemoryJournal(this.game.memory);
             this.game.state = 'journal';
             this.journalOverlay.classList.add('active');
-            if (document.pointerLockElement) document.exitPointerLock();
+            if (document.pointerLockElement) this.game._releasePointerLock();
             this._journalHandler = e => {
                 if (e.code === 'KeyJ' || e.code === 'Escape') this.toggleJournal(false);
             };
@@ -267,7 +267,7 @@ export class UI {
         this.noteText && (this.noteText.textContent = info.body || '');
         this.noteOverlay.classList.add('active');
         this.game.state = 'dialog';
-        if (document.pointerLockElement) document.exitPointerLock();
+        if (document.pointerLockElement) this.game._releasePointerLock();
         if (this._noteHandler) window.removeEventListener('keydown', this._noteHandler);
         this._noteHandler = e => {
             if (e.code === 'KeyE' || e.code === 'Escape') this.hideNote();
@@ -325,6 +325,7 @@ export class UI {
 
     showEndingChoice(available, onChoose) {
         if (!this.endingOverlay || !this.endingChoiceEl) return;
+        this.endingOverlay.classList.remove('final-card');
         this.endingOverlay.classList.remove('final-card');
         this.endingOverlay.classList.add('active');
         this.endingChoiceEl.replaceChildren();
@@ -386,18 +387,18 @@ export class UI {
 
     showEnding(ending, opts = {}) {
         this.endingCinematic.stop();
+        // The opaque, decoded card is already behind the video before it ends.
+        const cardReady = this._showEndingCard(ending, opts);
         if (this.endingCinematic.hasVideo(ending.id)) {
-            this.endingOverlay?.classList.remove('active');
             this.game.state = 'ending-cinematic';
             this.game.music?.pause();
             this.game._stopWhispers();
             this.endingCinematic.start(ending, () => {
-                this.game.state = 'ending';
-                this._showEndingCard(ending, opts);
-            });
+                if (this.game.state === 'paused') this.game._pausedState = 'ending';
+                else this.game.state = 'ending';
+            }, cardReady);
             return;
         }
-        this._showEndingCard(ending, opts);
     }
 
     _showEndingCard(ending, opts = {}) {
@@ -406,16 +407,19 @@ export class UI {
         if (this.endingText) this.endingText.textContent = '';
         if (this.endingTitle) this.endingTitle.textContent = ending.title;
         if (this.endingStatus) this.endingStatus.textContent = ending.status;
+        let cardReady = Promise.resolve();
         if (this.endingVisual) {
             this.endingVisual.className = 'ending-visual visible';
             const image = document.createElement('img');
             image.src = ending.image;
             image.alt = ending.title;
             this.endingVisual.replaceChildren(image);
+            cardReady = image.decode().catch(() => {});
         }
         if (this.endingBack) this.endingBack.hidden = false;
         this.endingOverlay?.classList.add('active', 'final-card');
         this.endingOverlay?.setAttribute('aria-label', ending.title);
         this.updateEndingsCounter();
+        return cardReady;
     }
 }
