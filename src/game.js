@@ -740,6 +740,11 @@ export class Game {
         const dt = Math.min(this.clock.getDelta(), 0.05);
         this.music?.update(dt);
 
+        if (this.ui?.endingCinematic.active) {
+            this.ui.endingCinematic.update();
+            return;
+        }
+
         if (this.state === 'play') {
             if (this.player) this.player.update(dt);
             if (this.interactions) this.interactions.updateHover();

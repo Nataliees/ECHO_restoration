@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "test": "node test/story-tests.mjs && node test/interaction-tests.mjs && node test/markup-tests.mjs && node test/model-tests.mjs && node test/save-tests.mjs && node test/music-tests.mjs",
-    "test:browser": "node test/browser-tests.cjs"
+    "test:browser": "node test/browser-tests.cjs",
+    "test:ending": "node test/ending-cinematic-tests.cjs"
   }
 }

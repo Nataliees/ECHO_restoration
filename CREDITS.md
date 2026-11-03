@@ -33,3 +33,11 @@ New daughter line supplied by the project user as
 `ECHO___Daughter__When_are_you_coming__Daddy___matching_Daddy_line_.mp3`,
 retained unchanged as `assets/prologue_daughter.mp3`.
 Radio processing is applied at playback time.
+
+## Accept ending cinematic
+
+Video and hero voice recording supplied by the project user. The video stream
+is retained unchanged in `assets/ending_accept.mp4`; the voice is embedded at
+6 seconds, skipping 950 ms of leading room noise. The original voice recording
+is retained unchanged as `assets/ending_accept_hero.mp3`. Rebuild the audio track
+with `python tools/build-ending-accept.py`.

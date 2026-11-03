@@ -207,3 +207,19 @@ HTTP-сервер игры должен быть запущен отдельно
 - The subtitle appears in sync with the actual voice start (after the radio pre-hiss) and disappears at the end of the voice.
 - The English spoken audio is unchanged; no English subtitle is shown.
 - Skipping/closing the prologue clears the caption and its scheduled timers.
+
+
+## Кат-сцена «Принять правду»
+
+После выбора «Принять правду» воспроизводится предоставленный 10-секундный
+ролик. Реплика героя встроена в звуковую дорожку с шестой секунды, в момент
+закрытия глаз. Начальная пауза записи в 950 мс пропущена; исходная MP3
+сохранена без изменений. Фоновая музыка на время кат-сцены приостанавливается.
+После окончания или пропуска ролика открывается текст концовки. Escape также
+пропускает кат-сцену; скрытие вкладки приостанавливает видео вместе со звуком.
+
+Для пересборки дорожки: `python tools/build-ending-accept.py` (нужен ffmpeg).
+Для прохождения ffmpeg не требуется.
+
+Проверка кат-сцены в браузере: `npm run test:ending` (тот же Playwright и
+запущенный HTTP-сервер, что и для `npm run test:browser`).

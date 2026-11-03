@@ -1,4 +1,5 @@
 import { fragments, notes, storyRequirements, endings } from './story.js';
+import { EndingCinematic } from './ending-cinematic.js';
 
 export class UI {
     constructor(game) {
@@ -45,6 +46,7 @@ export class UI {
         this._endingBack = null;
         this._afterNote = null;
         this._moralHandler = null;
+        this.endingCinematic = new EndingCinematic(game);
         this._bind();
     }
 
@@ -212,6 +214,7 @@ export class UI {
     }
 
     resetForMenu() {
+        this.endingCinematic.stop();
         clearTimeout(this._locationTimer);
         document.getElementById('location-announcement')?.classList.remove('visible');
         this._afterNote = null;
@@ -357,6 +360,22 @@ export class UI {
     }
 
     showEnding(ending, opts = {}) {
+        this.endingCinematic.stop();
+        if (ending.id === 'accept') {
+            this.endingOverlay?.classList.remove('active');
+            this.game.state = 'ending-cinematic';
+            this.game.music?.pause();
+            this.game._stopWhispers();
+            this.endingCinematic.start(() => {
+                this.game.state = 'ending';
+                this._showEndingSummary(ending, opts);
+            });
+            return;
+        }
+        this._showEndingSummary(ending, opts);
+    }
+
+    _showEndingSummary(ending, opts = {}) {
         this._endingBack = opts.onBackToMenu || null;
         if (this.endingText) this.endingText.textContent = ending.text;
         if (this.endingTitle) this.endingTitle.textContent = ending.title;

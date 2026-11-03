@@ -783,6 +783,10 @@ body.intro-active #crosshair { display:none !important; }
 .menu-version a:hover { color: #d2ece2; }
 /* Minimal main menu and separate information screens. */
 [hidden] { display: none !important; }
+#ending-cinematic { position:fixed; inset:0; z-index:1000; background:#000; }
+#ending-video { display:block; width:100%; height:100%; object-fit:contain; }
+#ending-skip { position:absolute; bottom:max(24px,env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%); margin:0; color:#e2e8e6; text-shadow:0 1px 4px #000; }
+#ending-play { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); margin:0; padding:16px 24px; background:#081116dd; color:#fff; }
 .main-menu-actions { display:flex; flex-direction:column; gap:10px; width:min(82vw,310px); margin:24px 0 6px; }
 .main-menu-actions .menu-btn { width:100%; margin:0; }
 #menu-screen { gap:12px; padding:32px 16px; }
