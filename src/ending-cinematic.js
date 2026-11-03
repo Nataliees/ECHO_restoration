@@ -16,7 +16,7 @@ export class EndingCinematic {
         this.video.addEventListener('ended', () => this.finish());
         this.video.addEventListener('error', () => {
             if (!this.active) return;
-            console.warn('Ending video unavailable; showing the ending summary.');
+            console.warn('Ending video unavailable; showing the ending card.');
             this.finish();
         });
         this.playButton.addEventListener('click', () => this.play());

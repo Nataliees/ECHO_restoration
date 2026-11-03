@@ -46,3 +46,9 @@ with `python tools/build-ending-accept.py`.
 
 Video and soundtrack supplied by the project user as `Sequence 01_1.mp4`,
 retained unchanged as `assets/ending_rewrite.mp4` for the rewrite ending.
+
+## Ending title cards
+
+Original artwork supplied by the project user through Google Drive, retained
+without changes in `assets/endings/`: `truth-accepted.png` (1.png),
+`history-rewritten.png` (2.png), and `start-again.png` (3.png).

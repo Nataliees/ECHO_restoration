@@ -28,7 +28,7 @@ const assert = require('node:assert/strict');
                 game.loadLevel(2);
                 game.interactions._openMirror();
             }, endingId);
-            await page.click(`[data-ending="${endingId}"]`);
+            await page.click(`.ending-option[data-ending="${endingId}"]`);
         }
 
         await chooseEnding();
@@ -70,7 +70,7 @@ const assert = require('node:assert/strict');
         assert.equal(await page.locator('#ending-cinematic-caption').isVisible(), false);
         await page.waitForFunction(() => window.__game.state === 'ending');
         await page.waitForSelector('#ending-overlay.active');
-        assert.equal(await page.locator('#ending-title').innerText(), 'Принять правду');
+        assert.equal(await page.locator('#ending-visual img').getAttribute('alt'), 'Принять правду');
         assert.equal(await page.locator('#ending-video').evaluate(video => video.paused), true);
         await page.click('#ending-back');
 
@@ -97,7 +97,7 @@ const assert = require('node:assert/strict');
         await page.route('**/assets/ending_accept.mp4', route => route.fulfill({ status: 404, body: 'missing' }));
         await chooseEnding();
         await page.waitForSelector('#ending-overlay.active');
-        assert.equal(await page.locator('#ending-title').innerText(), 'Принять правду');
+        assert.equal(await page.locator('#ending-visual img').getAttribute('alt'), 'Принять правду');
         await page.click('#ending-back');
         await page.waitForSelector('#menu-screen.active');
 
@@ -123,14 +123,14 @@ const assert = require('node:assert/strict');
         assert.ok(savedRewrite.endings.includes('rewrite'));
         await page.waitForFunction(() => window.__game.state === 'ending');
         await page.waitForSelector('#ending-overlay.active');
-        assert.equal(await page.locator('#ending-title').innerText(), 'Стереть');
+        assert.equal(await page.locator('#ending-visual img').getAttribute('alt'), 'Стереть');
         await page.click('#ending-back');
 
         await chooseEnding('rewrite');
         await page.waitForFunction(() => window.__game.state === 'ending-cinematic');
         await page.keyboard.press('Escape');
         await page.waitForSelector('#ending-overlay.active');
-        assert.equal(await page.locator('#ending-title').innerText(), 'Стереть');
+        assert.equal(await page.locator('#ending-visual img').getAttribute('alt'), 'Стереть');
         assert.equal(await page.locator('#ending-video').evaluate(video => video.hasAttribute('src')), false);
         await page.click('#ending-back');
         await page.waitForSelector('#menu-screen.active');

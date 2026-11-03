@@ -80,6 +80,7 @@ export const whispers = {
 export const endings = {
     accept: {
         id: 'accept',
+        image: './assets/endings/truth-accepted.png',
         title: 'Принять правду',
         label: 'ПРИНЯТЬ ПРАВДУ',
         status: 'IDENTITY PRESERVED',
@@ -87,6 +88,7 @@ export const endings = {
     },
     rewrite: {
         id: 'rewrite',
+        image: './assets/endings/history-rewritten.png',
         title: 'Стереть',
         label: 'СТЕРЕТЬ',
         status: 'MEMORY ERASED',
@@ -94,6 +96,7 @@ export const endings = {
     },
     restart: {
         id: 'restart',
+        image: './assets/endings/start-again.png',
         title: 'Создать новую личность',
         label: 'СОЗДАТЬ НОВУЮ ЛИЧНОСТЬ',
         status: 'NEW IDENTITY INITIALIZED',

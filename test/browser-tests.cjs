@@ -10,7 +10,7 @@ const output=process.env.ECHO_SCREENSHOTS||path.join(require('node:os').tmpdir()
  assert.equal(await page.locator('#btn-continue').isDisabled(),true);
  assert.equal(await page.locator('#btn-return-branch').isDisabled(),true);
  await page.waitForTimeout(650);await page.screenshot({path:path.join(output,'menu-new.png')});
- await page.click('#btn-endings');await page.waitForSelector('#endings-screen.active');assert.match(await page.locator('#menu-endings').innerText(),/Пока ни один/);await page.click('#btn-endings-back');
+ await page.click('#btn-endings');await page.waitForSelector('#endings-screen.active');assert.equal(await page.locator('#menu-endings .ending-entry.is-locked').count(),3);await page.click('#btn-endings-back');
  await page.click('#btn-about');await page.waitForSelector('#about-screen.active');await page.click('#btn-about-back');
  await page.click('#btn-start');await page.waitForFunction(()=>window.__game.state==='prologue');await page.waitForFunction(()=>window.__game.prologue.sound.count>0);await page.click('#prologue-skip');assert.equal(await page.evaluate(()=>window.__game.prologue.sound.nodes.size),0);assert.ok(Math.abs(await page.evaluate(()=>{const t=window.__game.prologue.radio.timeline;return t.voiceStart-t.textEnd;})-.5)<.001);await page.waitForFunction(()=>window.__game.state==='intro');await page.click('#intro-skip');await page.waitForFunction(()=>window.__game.state==='play');
  async function focus(id,x,z){
@@ -35,7 +35,7 @@ const output=process.env.ECHO_SCREENSHOTS||path.join(require('node:os').tmpdir()
  async function finish(expected,ending){
   await read('memory_toy',2.2,-.3);await focus('final_mirror',0,-2.3);await page.keyboard.press('KeyE');await page.waitForFunction(()=>window.__game.state==='ending');
   assert.deepEqual(await page.locator('.ending-option').evaluateAll(ns=>ns.map(n=>n.dataset.ending)),expected);
-  await page.click(`[data-ending="${ending}"]`);if(['accept','rewrite'].includes(ending)){await page.waitForSelector('#ending-cinematic',{state:'visible'});await page.click('#ending-skip');}await page.click('#ending-back');await page.waitForSelector('#menu-screen.active');
+  await page.click(`.ending-option[data-ending="${ending}"]`);if(['accept','rewrite'].includes(ending)){await page.waitForSelector('#ending-cinematic',{state:'visible'});await page.click('#ending-skip');}await page.click('#ending-back');await page.waitForSelector('#menu-screen.active');
  }
  await finish(['accept','restart'],'accept');
  await page.click('#btn-endings');await page.waitForSelector('#endings-screen.active');assert.match(await page.locator('#menu-endings').innerText(),/Принять правду/);await page.click('#btn-endings-back');
@@ -43,7 +43,7 @@ const output=process.env.ECHO_SCREENSHOTS||path.join(require('node:os').tmpdir()
  assert.equal(await page.evaluate(()=>window.__game.memory.hasFragment('toy_memory')),false,'checkpoint does not retain later toy');
  await page.click('#moral-justify');await page.waitForFunction(()=>window.__game.levelIndex===2&&window.__game.state==='play');await finish(['rewrite','restart'],'rewrite');
  await page.click('#btn-return-branch');await page.click('#moral-accept');await finish(['accept','restart'],'restart');
- assert.equal(await page.locator('#menu-endings li').count(),3);
+ assert.equal(await page.locator('#menu-endings .ending-entry:not(.is-locked)').count(),3);
  await page.waitForTimeout(650);await page.screenshot({path:path.join(output,'menu-completed.png')});
  const resources=await page.evaluate(()=>{const g=window.__game;g.hasActiveRun=true;g.state='play';const render=()=>{g.renderer.render(g.scene,g.camera);return {...g.renderer.info.memory};};g.loadLevel(2);const before=render();for(let i=0;i<3;i++){g.loadLevel(0);render();g.loadLevel(1);render();g.loadLevel(2);render();}g.backToMenu();return {before,after:(g.loadLevel(2),render())};});
  assert.deepEqual(resources.after,resources.before);

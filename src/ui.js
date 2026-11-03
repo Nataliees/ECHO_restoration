@@ -206,15 +206,39 @@ export class UI {
         if (this.counterEl) this.counterEl.textContent = `ФИНАЛЫ ${count}/3`;
         if (this.menuEndingsEl) {
             this.menuEndingsEl.replaceChildren();
-            if(!count){const empty=document.createElement('p');empty.className='endings-empty';empty.textContent='Пока ни один финал не открыт.';this.menuEndingsEl.appendChild(empty);}
-            const list=document.createElement('ul');list.className='menu-ending-list';
-            for(const id of this.game.unlockedEndings){if(!endings[id])continue;const li=document.createElement('li');li.textContent=endings[id].title;list.appendChild(li);}
+            const list = document.createElement('ul');
+            list.className = 'menu-ending-list ending-gallery';
+            for (const ending of Object.values(endings)) {
+                const unlocked = this.game.unlockedEndings.has(ending.id);
+                const item = document.createElement('li');
+                item.className = `ending-entry${unlocked ? '' : ' is-locked'}`;
+                item.dataset.ending = ending.id;
+                const image = document.createElement('img');
+                image.className = 'ending-entry-image';
+                image.src = ending.image;
+                image.alt = ending.title;
+                image.decoding = 'async';
+                const copy = document.createElement('div');
+                copy.className = 'ending-entry-copy';
+                const title = document.createElement('h3');
+                title.textContent = ending.title;
+                const progress = document.createElement('p');
+                progress.className = 'ending-entry-progress';
+                progress.textContent = unlocked ? 'ОТКРЫТА' : 'НЕ ОТКРЫТА';
+                const description = document.createElement('p');
+                description.className = 'ending-entry-description';
+                description.textContent = ending.text;
+                copy.append(title, progress, description);
+                item.append(image, copy);
+                list.appendChild(item);
+            }
             this.menuEndingsEl.appendChild(list);
         }
     }
 
     resetForMenu() {
         this.endingCinematic.stop();
+        this.endingOverlay?.classList.remove('final-card');
         clearTimeout(this._locationTimer);
         document.getElementById('location-announcement')?.classList.remove('visible');
         this._afterNote = null;
@@ -301,6 +325,7 @@ export class UI {
 
     showEndingChoice(available, onChoose) {
         if (!this.endingOverlay || !this.endingChoiceEl) return;
+        this.endingOverlay.classList.remove('final-card');
         this.endingOverlay.classList.add('active');
         this.endingChoiceEl.replaceChildren();
         this.endingChoiceEl.classList.add('active');
@@ -368,24 +393,29 @@ export class UI {
             this.game._stopWhispers();
             this.endingCinematic.start(ending, () => {
                 this.game.state = 'ending';
-                this._showEndingSummary(ending, opts);
+                this._showEndingCard(ending, opts);
             });
             return;
         }
-        this._showEndingSummary(ending, opts);
+        this._showEndingCard(ending, opts);
     }
 
-    _showEndingSummary(ending, opts = {}) {
+    _showEndingCard(ending, opts = {}) {
+        this._closeEndingChoice();
         this._endingBack = opts.onBackToMenu || null;
-        if (this.endingText) this.endingText.textContent = ending.text;
+        if (this.endingText) this.endingText.textContent = '';
         if (this.endingTitle) this.endingTitle.textContent = ending.title;
         if (this.endingStatus) this.endingStatus.textContent = ending.status;
         if (this.endingVisual) {
-            this.endingVisual.className = `ending-visual visible ending-${ending.id}`;
-            this.endingVisual.textContent = ending.id === 'restart' ? 'NEW IDENTITY' : 'ECHO';
+            this.endingVisual.className = 'ending-visual visible';
+            const image = document.createElement('img');
+            image.src = ending.image;
+            image.alt = ending.title;
+            this.endingVisual.replaceChildren(image);
         }
         if (this.endingBack) this.endingBack.hidden = false;
-        this.endingOverlay?.classList.add('active');
+        this.endingOverlay?.classList.add('active', 'final-card');
+        this.endingOverlay?.setAttribute('aria-label', ending.title);
         this.updateEndingsCounter();
     }
 }
