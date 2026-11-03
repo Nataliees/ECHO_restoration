@@ -5,7 +5,7 @@ import * as THREE from 'three';
  * ECHO opening — 10 seconds, synchronized with the approved English MP3s.
  * The full approved 8-second WAN animation shows the hand approaching and then
  * withdrawing from the same emergency shutdown button. Alarm lighting, radio
- * processing, the fracture, impact and white flash are created locally.
+ * processing, the fade to black, fracture and impact are created locally.
  */
 export class IntroSequence {
     constructor(game) {
@@ -21,7 +21,7 @@ export class IntroSequence {
         this.audioRoutingReady = false;
 
         this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color(0x030507);
+        this.scene.background = new THREE.Color(0x000000);
         this.camera = new THREE.OrthographicCamera(-1.78, 1.78, 1, -1, 0.1, 10);
         this.camera.position.z = 3;
         this.backgroundGeometry = new THREE.PlaneGeometry(2, 2);
@@ -44,7 +44,7 @@ export class IntroSequence {
 
         this.fallbackTexture = new THREE.TextureLoader().load('./assets/intro_first_frame.jpg');
         this.fallbackTexture.colorSpace = THREE.SRGBColorSpace;
-        const videoMat = new THREE.MeshBasicMaterial({map: this.fallbackTexture, toneMapped: false});
+        const videoMat = new THREE.MeshBasicMaterial({map: this.fallbackTexture, toneMapped: false, transparent: true});
         this.videoPlane = new THREE.Mesh(new THREE.PlaneGeometry(2,2), videoMat);
         this.videoPlane.position.z = -0.2;
         this.scene.add(this.videoPlane);
@@ -53,10 +53,9 @@ export class IntroSequence {
             videoMat.needsUpdate = true;
         });
 
-        // The white flash and black title backdrop are actual Three.js quads.
-        this.white = this._makeOverlay(0xffffff, 0.2);
+        // Alarm lighting fades with the image; the title keeps a black backdrop.
         this.alarmOverlay = this._makeOverlay(0x9b0710, 0.12);
-        this.black = this._makeOverlay(0x010205, 0.4);
+        this.black = this._makeOverlay(0x000000, 0.4);
 
         const glass=buildGlassShatter(game.renderer);
         this.glassEnvironmentTarget=glass.environmentTarget;
@@ -134,7 +133,7 @@ export class IntroSequence {
         const imageAspect = 16/9;
         const width = 2*Math.min(aspect,imageAspect);
         const height = width/imageAspect;
-        const overlays = [this.white,this.alarmOverlay,this.black];
+        const overlays = [this.alarmOverlay,this.black];
         this.videoPlane.scale.set(width/2,height/2,1);
         this.shatterGroup.scale.set(width/2,height/2,1);
         this.cracks.scale.set(width/2,height/2,1);
@@ -156,12 +155,12 @@ export class IntroSequence {
         this.radioPreludePlayed = false;
         this.explosionPlayed = false;
         this.shatterStarted = false;
-        this.white.material.opacity = 0;
         this.alarmOverlay.material.opacity = 0;
         this.black.material.opacity = 0;
         this.crackMaterial.opacity = 0;
         this.cracks.geometry.setDrawRange(0,0);
         this.videoPlane.visible = true;
+        this.videoPlane.material.opacity = 1;
         this.videoPlane.material.color.set(0xffffff);
         this.videoPlane.position.set(0,0,-0.2);
         this.videoPlane.rotation.set(0,0,0);
@@ -332,10 +331,16 @@ export class IntroSequence {
         const t = this.elapsed;
         this._onResizeIfChanged();
 
+        // Fade the complete image and alarm lighting smoothly before any cracks.
+        const imageOpacity = 1 - THREE.MathUtils.smoothstep(t, 7.55, 8.50);
+        this.videoPlane.material.opacity = imageOpacity;
+        this.videoPlane.visible = t < 8.50;
+        if (t >= 8.50 && this.caption) this.caption.textContent = '';
+
         // Immediate alarm atmosphere: stronger red pulses and slight light flicker.
-        if (t < 8.9) {
+        if (t < 8.50) {
             const pulse = Math.pow(Math.max(0, Math.sin(t * Math.PI * 2 * 1.55)), 5);
-            this.alarmOverlay.material.opacity = 0.05 + pulse * 0.22;
+            this.alarmOverlay.material.opacity = (0.05 + pulse * 0.22) * imageOpacity;
         } else {
             this.alarmOverlay.material.opacity = 0;
         }
@@ -390,7 +395,6 @@ export class IntroSequence {
         if (t >= 8.90) {
             if (!this.shatterStarted) {
                 this.shatterStarted = true;
-                this.videoPlane.visible = true;
                 this.crackMaterial.opacity=0;
                 this.shatterGroup.visible = true;
                 this.shatterPieces.forEach(piece => {
@@ -399,7 +403,6 @@ export class IntroSequence {
                 });
             }
             const time=Math.max(0,t-8.90);
-            this.videoPlane.material.color.setScalar(Math.max(.03,1-Math.min(1,time/.65)*.95));
             this.shatterPieces.forEach(piece=>{
                 const q=Math.max(0,time-piece.delay);
                 piece.mesh.position.set(piece.center.x+piece.velocity.x*q*1.65,piece.center.y+piece.velocity.y*q*1.4-q*q*.8,piece.velocity.z*q);
@@ -410,11 +413,7 @@ export class IntroSequence {
             });
         }
 
-        // Flash after the shatter.
-        if (t >= 9.55) {
-            if (t < 9.83) this.white.material.opacity = Math.min(1, (t - 9.55) / 0.1);
-            else this.white.material.opacity = Math.max(0, 1 - (t - 9.83) / 0.32);
-        }
+        // Keep the background black after the fragments fade, then reveal ECHO.
         if (t >= 10.17) this.black.material.opacity = Math.min(1, (t - 10.17) / 0.24);
         if (t >= 10.47) {
             if (this.title) this.title.classList.add('visible');
