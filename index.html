@@ -73,9 +73,21 @@
     <div id="about-screen" class="screen">
         <h2>Об игре</h2>
         <p class="about-copy">После катастрофы главный инженер просыпается в комплексе восстановления памяти ECHO. Детский рисунок, оборванная передача и повреждённые документы связывают его с прошлым. Ему предстоит решить, какую ответственность он готов принять и что сделать со своими воспоминаниями.</p>
-        <a class="about-credits" href="CREDITS.md" target="_blank" rel="noopener">Авторы и лицензии</a>
+        <button id="btn-credits" class="about-credits menu-text-btn" type="button" aria-controls="credits-screen">Авторы и лицензии</button>
         <button id="btn-about-back" class="menu-btn">В главное меню</button>
     </div>
+    <section id="credits-screen" class="screen" aria-labelledby="credits-title">
+        <h2 id="credits-title">Авторы и лицензии</h2>
+        <div id="credits-viewport">
+            <div id="credits-roll"></div>
+            <p id="credits-status" role="status" aria-live="polite" hidden></p>
+        </div>
+        <footer class="credits-footer">
+            <p id="credits-hint" class="menu-controls">Пробел — пауза · E — назад</p>
+            <button id="btn-credits-back" class="menu-btn" type="button">Назад</button>
+        </footer>
+    </section>
+
     <div id="moral-overlay" class="overlay" role="dialog" aria-modal="true" aria-label="Первый моральный выбор">
         <div class="note-content">
             <h2>Первое решение</h2>

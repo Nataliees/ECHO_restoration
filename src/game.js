@@ -1,5 +1,6 @@
 import { BackgroundMusic } from './music.js';
 import { KeyboardControls } from './keyboard-controls.js';
+import { CreditsRoll } from './credits.js';
 import { PrologueSequence } from './prologue.js';
 import { dressLaterAct } from './later-acts.js';
 import { makeModel } from './models.js';
@@ -56,6 +57,7 @@ export class Game {
 
         this.music = new BackgroundMusic(this);
         this.recording = new RecoveredTransmission(this);
+        this.credits = new CreditsRoll();
         this._bindUI();
         this.keyboard = new KeyboardControls(this);
         this._updateMenuState();
@@ -114,6 +116,11 @@ export class Game {
         document.getElementById('btn-endings-back')?.addEventListener('click', () => this._showScreen('menu-screen'));
         document.getElementById('btn-about')?.addEventListener('click', () => this._showScreen('about-screen'));
         document.getElementById('btn-about-back')?.addEventListener('click', () => this._showScreen('menu-screen'));
+        document.getElementById('btn-credits').addEventListener('click', () => {
+            this._showScreen('credits-screen');
+            this.credits.start();
+        });
+        document.getElementById('btn-credits-back').addEventListener('click', () => this._showScreen('about-screen'));
         if (startBtn) startBtn.addEventListener('click', () => this.startNewGame());
         if (continueBtn) continueBtn.addEventListener('click', () => this.continueGame());
         if (resumeBtn) resumeBtn.addEventListener('click', () => this.resume());
@@ -136,7 +143,8 @@ export class Game {
     }
 
     _showScreen(id) {
-        document.body.classList.toggle('menu-view', ['menu-screen','about-screen','endings-screen'].includes(id));
+        if (id !== 'credits-screen') this.credits?.stop();
+        document.body.classList.toggle('menu-view', ['menu-screen','about-screen','endings-screen','credits-screen'].includes(id));
         document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
         if (id) {
             const el = document.getElementById(id);

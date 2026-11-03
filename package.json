@@ -7,6 +7,7 @@
     "test:browser": "node test/browser-tests.cjs",
     "test:ending": "node test/ending-cinematic-tests.cjs",
     "test:gallery": "node test/ending-gallery-tests.cjs",
-    "test:controls": "node test/controls-tests.cjs"
+    "test:controls": "node test/controls-tests.cjs",
+    "test:credits": "node test/credits-tests.cjs"
   }
 }

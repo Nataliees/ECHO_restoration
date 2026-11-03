@@ -1019,3 +1019,26 @@ body.menu-view #subtitle-box, body.menu-view #interact-prompt { display:none !im
     .ending-entry { grid-template-columns:minmax(0,1fr); gap:20px; padding:28px 0; }
     .ending-entry-description { font-size:14px; line-height:1.75; }
 }
+
+/* In-game rolling author and license credits. */
+button.about-credits { text-decoration:underline; }
+#credits-screen { position:fixed; inset:0; justify-content:flex-start; gap:20px; padding:32px 20px 120px; background:#020607; overflow:hidden; z-index:14; }
+#credits-title { margin:0; font-family:'ECHO Interface',sans-serif; font-size:24px; font-weight:500; letter-spacing:.07em; }
+#credits-viewport { position:relative; width:min(800px,100%); flex:1; min-height:0; overflow:hidden; -webkit-mask-image:linear-gradient(transparent,#000 10%,#000 90%,transparent); mask-image:linear-gradient(transparent,#000 10%,#000 90%,transparent); }
+#credits-roll { position:absolute; top:0; left:0; right:0; padding:0 24px; text-align:center; color:#bed0cc; font:16px/1.9 'ECHO Interface',sans-serif; will-change:transform; overflow-wrap:anywhere; }
+#credits-roll h1 { margin:0 0 64px; font-size:clamp(24px,4vw,36px); font-weight:500; line-height:1.5; letter-spacing:.12em; color:#f0f4ed; }
+#credits-roll h3 { margin:46px 0 16px; font-size:20px; font-weight:500; letter-spacing:.06em; color:#e3eee8; }
+#credits-roll p { margin:0 0 20px; }
+#credits-roll a { color:#a6cbc3; text-decoration:underline; text-underline-offset:3px; }
+#credits-roll a:focus-visible { outline:1px solid #a6cbc3; outline-offset:3px; }
+#credits-roll code { color:inherit; font:inherit; }
+#credits-status { position:absolute; top:45%; width:100%; margin:0; padding:0 24px; color:#a6bdb7; text-align:center; font:16px/1.7 'ECHO Interface',sans-serif; }
+.credits-footer { position:fixed; bottom:0; left:0; width:100%; padding:14px 16px max(24px,env(safe-area-inset-bottom)); background:linear-gradient(transparent,#020607 28%); text-align:center; }
+.credits-footer .menu-controls { margin:0 0 12px; }
+.credits-footer .menu-btn { margin:0; }
+@media(max-width:600px) {
+    #credits-screen { padding:24px 14px 126px; gap:16px; }
+    #credits-title { font-size:20px; }
+    #credits-roll { padding:0 12px; font-size:14px; line-height:1.85; }
+    #credits-roll h3 { font-size:18px; }
+}

@@ -20,7 +20,9 @@ export class KeyboardControls {
     }
 
     buttons() {
-        return [...(this.panel()?.querySelectorAll('button, a[href]') || [])]
+        const panel = this.panel();
+        const selector = panel?.id === 'credits-screen' ? 'button' : 'button, a[href]';
+        return [...(panel?.querySelectorAll(selector) || [])]
             .filter(button => !button.disabled && !button.hidden && button.getClientRects().length && getComputedStyle(button).display !== 'none');
     }
 
@@ -31,6 +33,7 @@ export class KeyboardControls {
         const consume = () => { event.preventDefault(); event.stopImmediatePropagation(); };
         if (event.code === 'Escape') {
             consume();
+            if (this.panel()?.id === 'credits-screen') { document.getElementById('btn-credits-back').click(); return; }
             // Escape only pauses. Resuming uses the explicit Continue action;
             // this also avoids a native pointer-unlock event toggling twice.
             if (!event.repeat && game.state !== 'paused') game.pause();
@@ -56,6 +59,9 @@ export class KeyboardControls {
             selected?.focus({ preventScroll: true });
             selected?.click();
             return;
+        }
+        if (this.panel()?.id === 'credits-screen' && ['Space','ArrowUp','ArrowDown','PageUp','PageDown'].includes(event.code)) {
+            consume(); game.credits.handleKey(event); return;
         }
         const readingPanel = game.state === 'dialog' ? document.getElementById('note-overlay')
             : game.state === 'journal' ? document.getElementById('journal-overlay')
